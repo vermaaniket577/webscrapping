@@ -1,0 +1,9 @@
+target/
+logs/
+.idea/
+
+captchas/
+sample/
+ocr-debug/
+
+.ai_context/

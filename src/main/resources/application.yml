@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: mca-automation
+  datasource:
+    url: jdbc:h2:mem:mca_automation;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+server:
+  tomcat:
+    threads:
+      max: ${SERVER_TOMCAT_THREADS_MAX:100}
+      min-spare: ${SERVER_TOMCAT_THREADS_MIN_SPARE:10}
+    accept-count: ${SERVER_TOMCAT_ACCEPT_COUNT:100}
+
+mca:
+  crypto:
+    passText: ${MCA_CRYPTO_PASS_TEXT:d6163f0659cfe4196dc03c2c29aab06f10cb0a79cdfc74a45da2d72358712e80}
+    salt: ${MCA_CRYPTO_SALT:fc74a45dsalt}
+    iv: ${MCA_CRYPTO_IV:c29aab06iv}
+    keySize: ${MCA_CRYPTO_KEY_SIZE:128}
+    iterations: ${MCA_CRYPTO_ITERATIONS:100}
+
+ocr:
+  tessdataPath: ${OCR_TESSDATA_PATH:/usr/local/share/tessdata}
+  language: ${OCR_LANGUAGE:eng}
+  nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:}
