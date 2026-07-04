@@ -16,6 +16,7 @@ public class OtpSessionStore {
         if (key.isBlank() || sblUserId == null || sblUserId.isBlank()) {
             return;
         }
+        // Key by stable MCA cookies so OTP verification can recover sblUserId after cookie updates.
         this.sessions.put(key, new OtpSession(sblUserId.trim(), Instant.now()));
     }
 
@@ -40,6 +41,7 @@ public class OtpSessionStore {
         if (!uuidHash.isBlank()) {
             return "__UUID-HASH=" + uuidHash;
         }
+        // _csrf is less stable than __UUID-HASH, but it is good enough as a fallback for the OTP window.
         String csrf = this.cookieValue(cookie, "_csrf");
         return csrf.isBlank() ? "" : "_csrf=" + csrf;
     }

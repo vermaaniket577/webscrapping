@@ -30,6 +30,7 @@ public class OtpController {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp Verification Failed", null);
         }
         verifyOtpDTO.setCookie(cookie);
+        // MCA OTP validation is only the first step; this follow-up login exchanges it for session cookies.
         String finalCookie = this.mcaLoginService.verifiedOTPLogin(verifyOtpDTO);
         if (finalCookie == null || finalCookie.isBlank() || "false".equalsIgnoreCase(finalCookie)) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp Verified but post-OTP login failed", cookie);

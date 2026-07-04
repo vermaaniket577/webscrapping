@@ -88,6 +88,7 @@ public class McaSearchService {
         String plainData = "ID=" + searchResponse + "&requestID=din&userInput=" + cap.captcha() + "&pre_CT=" + cap.preCt();
         String data = "data=" + this.crypto.encrypt(plainData) + "&csrfToken=" + this.crypto.encrypt(csrf) + "&csrfDecode=false";
         if ("cin".equalsIgnoreCase(requestType)) {
+            // Autosuggest may return multiple companies; prefer the caller's exact CIN when present.
             String cnNumber = this.util.extractCIN(searchResponse, requestedIdentifier);
             String plainData2 = "ID=" + cnNumber + "&requestID=cin&userInput=" + cap.captcha() + "&pre_CT=" + cap.preCt();
             data = "data=" + this.crypto.encrypt(plainData2) + "&csrfToken=" + this.crypto.encrypt(csrf) + "&csrfDecode=false";

@@ -152,6 +152,7 @@ public class Util {
     public String extractCIN(String jsonString, String requestedIdentifier) throws Exception {
         String normalizedRequest = this.normalizeIdentifier(requestedIdentifier);
         if (this.looksLikeCin(normalizedRequest)) {
+            // Direct CIN requests should not depend on autosuggest ordering.
             return normalizedRequest;
         }
         ObjectMapper mapper = new ObjectMapper();
@@ -164,6 +165,7 @@ public class Util {
             for (JsonNode result : results) {
                 String cnNumber = result.path("cnNmbr").asText();
                 if (normalizedRequest.equals(this.normalizeIdentifier(cnNumber))) {
+                    // Name searches can return several hits; use the exact requested identifier if it appears.
                     return cnNumber;
                 }
             }

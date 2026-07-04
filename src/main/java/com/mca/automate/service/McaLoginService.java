@@ -263,6 +263,7 @@ public class McaLoginService {
     public String verifiedOTPLogin(VerifyOtpDTO verifyOtpDTO) {
         String sblUserId = this.util.stripNewlines(this.util.safe(verifyOtpDTO.getSblUserId()));
         if (sblUserId.isBlank()) {
+            // Initial login stores sblUserId by cookie so the OTP API does not need clients to pass it around.
             sblUserId = this.otpSessionStore.sblUserId(verifyOtpDTO.getCookie());
         }
         if (sblUserId.isBlank()) {
@@ -308,6 +309,7 @@ public class McaLoginService {
                         }
                     }
                 }
+                // Treat HTTP 200 without these cookies as incomplete; downstream MCA calls need both.
                 if (sessionId.isBlank() || sessionMd5.isBlank()) {
                     System.out.println("+++++ verify otp login did not return session cookies");
                     return "false";
