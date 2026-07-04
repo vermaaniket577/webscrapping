@@ -64,6 +64,7 @@ public class McaCaptchaService {
                 continue;
             }
             ValidateCaptchaRequest req = new ValidateCaptchaRequest(captcha.captcha(), captcha.preCt(), captcha.status(), cookie);
+            // Prime CSRF after captcha generation because MCA can rotate cookies during the captcha call.
             req = new ValidateCaptchaRequest(req.captchaTxt(), req.preCt(), req.status(), this.primeCsrfToken(req.cookie()));
             response = this.validateCaptcha(req);
             if (response != null && response.status()) {
@@ -256,6 +257,7 @@ public class McaCaptchaService {
             return candidate;
         }
         log.info("Using custom captcha extractor hook{}", forceCustomExtractor ? " after first OCR attempt" : " because primary OCR flow failed");
+        // The custom extractor works with an image path, so save a short-lived temp PNG.
         String imagePath = this.saveCaptchaPngForFallback(image, timestamp);
         if (imagePath.isBlank()) {
             return candidate;

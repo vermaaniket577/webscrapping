@@ -44,6 +44,7 @@ public class MasterDataController {
     public String fetchMasterData(@RequestBody MasterDataRequest masterDataRequest, @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
         if (!incomingCookie.isBlank()) {
+            // OTP verification returns an authenticated MCA cookie; callers can reuse it here to skip login.
             System.out.println("Using caller supplied MCA session cookie for getcompanymasterdata");
             return this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, incomingCookie, false);
         }
@@ -53,6 +54,7 @@ public class MasterDataController {
             return loginResponse.message();
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
+            // Login is intentionally split here: client verifies OTP, then calls back with the verified cookie.
             return loginResponse.cookie();
         }
         return this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
@@ -60,6 +62,7 @@ public class MasterDataController {
 
     private String fetchMasterDataWithAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie, boolean logoutWhenDone) throws Exception {
         LoginResponse loginResponse = new LoginResponse(cookie, "Authenticated Cookie", true);
+        // MCA requires a fresh captcha for the search/master-data servlet even after login.
         ValidateCaptchaResponse afterLoginCResponse = this.captchaService.captchaValidatonWrapper(loginResponse.cookie());
         if (!afterLoginCResponse.status()) {
             return "Missing request parameter!!!";
@@ -70,6 +73,7 @@ public class MasterDataController {
         System.out.println("Search Data " + fSearchResponseJson);
         String responseData = this.mcaSearchService.searchMasterData(masterDataRequest.getCompanyNameOrCIN(), captchaCookieLoginResponse, fSearchResponseJson, "cin");
         if (logoutWhenDone) {
+            // Do not logout caller-supplied cookies; those are controlled by the OTP/manual client flow.
             this.mcaLoginService.logout(captchaCookieLoginResponse.cookie());
         }
         return responseData;
