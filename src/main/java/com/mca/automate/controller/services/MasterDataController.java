@@ -84,7 +84,13 @@ public class MasterDataController {
     }
 
     @PostMapping({"/getcompanymasterdataWithName"})
-    public String fetchMasterDataWithName(@RequestBody MasterDataRequest masterDataRequest) throws Exception {
+    public String fetchMasterDataWithName(@RequestBody MasterDataRequest masterDataRequest, @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
+        String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
+        if (!incomingCookie.isBlank()) {
+            // OTP verification returns an authenticated MCA cookie; callers can reuse it here to skip login.
+            System.out.println("Using caller supplied MCA session cookie for getcompanymasterdataWithName");
+            return this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, incomingCookie, false);
+        }
         LoginResponse loginResponse = this.mcaLoginService.login(masterDataRequest.getUserName(), masterDataRequest.getPassword(), masterDataRequest.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status());
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
@@ -94,10 +100,23 @@ public class MasterDataController {
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
             return loginResponse.cookie();
         }
+        return this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
+    }
+
+    private String fetchMasterDataWithNameAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie, boolean logoutWhenDone) throws Exception {
+        LoginResponse loginResponse = new LoginResponse(cookie, "Authenticated Cookie", true);
+        // Name search also needs a captcha token, but should not force a second login after OTP.
         ValidateCaptchaResponse afterLoginCResponse = this.captchaService.captchaValidatonWrapper(loginResponse.cookie());
+        if (!afterLoginCResponse.status()) {
+            return "Missing request parameter!!!";
+        }
+        LoginResponse captchaCookieLoginResponse = new LoginResponse(afterLoginCResponse.cookie(), loginResponse.message(), loginResponse.status());
         System.out.println(afterLoginCResponse.captcha() + "===" + afterLoginCResponse.preCt());
-        String responseData = this.mcaSearchService.search(masterDataRequest, loginResponse, afterLoginCResponse);
-        this.mcaLoginService.logout(loginResponse.cookie());
+        String responseData = this.mcaSearchService.search(masterDataRequest, captchaCookieLoginResponse, afterLoginCResponse);
+        if (logoutWhenDone) {
+            // Do not logout caller-supplied cookies; those are controlled by the OTP/manual client flow.
+            this.mcaLoginService.logout(captchaCookieLoginResponse.cookie());
+        }
         return responseData;
     }
 
