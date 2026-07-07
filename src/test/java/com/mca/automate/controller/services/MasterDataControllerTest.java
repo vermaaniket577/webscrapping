@@ -142,6 +142,50 @@ class MasterDataControllerTest {
         verify(loginService).logout("name-captcha-cookie");
     }
 
+    @Test
+    void suppliedVerifiedCookieChecksCompanyNameWithoutLoginOrLogout() throws Exception {
+        MasterDataRequest request = masterDataRequest();
+        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Op12Qr", "pre-ct-check", "check-cookie-updated", true);
+        when(captchaService.captchaValidatonWrapper("check-cookie")).thenReturn(captcha);
+        when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("check-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
+                .thenReturn("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
+
+        String response = controller.checkCompayName(request, "check-cookie\n");
+
+        assertThat(response).isEqualTo("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
+        verify(loginService, never()).login(any(), any(), any(), any());
+        verify(loginService, never()).logout(any());
+    }
+
+    @Test
+    void checkCompanyNameOtpRequiredReturnsCookieForOtpStep() throws Exception {
+        MasterDataRequest request = masterDataRequest();
+        when(loginService.login("user@example.com", "secret", "device-1", "login"))
+                .thenReturn(new LoginResponse("check-otp-cookie", "Otp Required", true));
+
+        String response = controller.checkCompayName(request, null);
+
+        assertThat(response).isEqualTo("check-otp-cookie");
+        verify(captchaService, never()).captchaValidatonWrapper(any());
+        verify(searchService, never()).checkCompanyName(any(), any(), any());
+    }
+
+    @Test
+    void checkCompanyNameLoginSuccessUsesCaptchaCookieAndLogsOutWhenDone() throws Exception {
+        MasterDataRequest request = masterDataRequest();
+        LoginResponse login = new LoginResponse("check-login-cookie", "Login Successful", true);
+        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("St34Uv", "pre-ct-check-2", "check-captcha-cookie", true);
+        when(loginService.login("user@example.com", "secret", "device-1", "login")).thenReturn(login);
+        when(captchaService.captchaValidatonWrapper("check-login-cookie")).thenReturn(captcha);
+        when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("check-captcha-cookie", "Authenticated Cookie", true)), eq(captcha)))
+                .thenReturn("check-company-response");
+
+        String response = controller.checkCompayName(request, "");
+
+        assertThat(response).isEqualTo("check-company-response");
+        verify(loginService).logout("check-captcha-cookie");
+    }
+
     private MasterDataRequest masterDataRequest() {
         MasterDataRequest request = new MasterDataRequest();
         request.setCompanyNameOrCIN("L74909DL2008PLC180850");
