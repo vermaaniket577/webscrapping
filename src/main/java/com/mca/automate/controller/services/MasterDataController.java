@@ -121,19 +121,32 @@ public class MasterDataController {
     }
 
     @PostMapping({"/getdirectordata"})
-    public String fetchDirData(@RequestBody DirectorDataRequest directorDataRequest) throws Exception {
+    public String fetchDirData(@RequestBody DirectorDataRequest directorDataRequest, @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         System.out.println("inside Din Data+++++++");
+        String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
+        if (!incomingCookie.isBlank()) {
+            // OTP verification returns an authenticated MCA cookie; reuse it instead of starting login again.
+            System.out.println("Using caller supplied MCA session cookie for getdirectordata");
+            return this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, incomingCookie, false);
+        }
         LoginResponse loginResponse = this.mcaLoginService.login(directorDataRequest.getUserName(), directorDataRequest.getPassword(), directorDataRequest.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
-            return this.util.stringTOJson(loginResponse.message());
+            return loginResponse.message();
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
-            return this.util.stringTOJson(loginResponse.cookie());
+            return loginResponse.cookie();
         }
         System.out.println("Login Response is " + loginResponse.status());
+        return this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, loginResponse.cookie(), true);
+    }
+
+    private String fetchDirectorDataWithAuthenticatedCookie(DirectorDataRequest directorDataRequest, String cookie, boolean logoutWhenDone) throws Exception {
+        LoginResponse loginResponse = new LoginResponse(cookie, "Authenticated Cookie", true);
         String responseData = this.mcaSearchService.searchMasterData(directorDataRequest.getUserName(), loginResponse, directorDataRequest.getDin(), "din");
-        this.mcaLoginService.logout(loginResponse.cookie());
+        if (logoutWhenDone) {
+            this.mcaLoginService.logout(loginResponse.cookie());
+        }
         return responseData;
     }
 
