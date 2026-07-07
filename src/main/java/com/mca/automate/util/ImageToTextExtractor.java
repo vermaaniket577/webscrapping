@@ -2,6 +2,8 @@ package com.mca.automate.util;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.imageio.ImageIO;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -18,6 +20,7 @@ public class ImageToTextExtractor {
     String nativeLibraryPath;
 
     public String getCaptchaText(BufferedImage preProcessedImg) throws TesseractException {
+        validateOcrInstall();
         configureNativeLibraryPath();
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath(this.ocrTesseract);
@@ -30,6 +33,17 @@ public class ImageToTextExtractor {
         tesseract.setTessVariable("user_defined_dpi", "300");
         String text = tesseract.doOCR(preProcessedImg);
         return text;
+    }
+
+    private void validateOcrInstall() throws TesseractException {
+        if (this.ocrTesseract == null || this.ocrTesseract.isBlank() || !Files.isDirectory(Path.of(this.ocrTesseract))) {
+            throw new TesseractException("Tesseract tessdata directory not found at '" + this.ocrTesseract
+                    + "'. Install system Tesseract or override -Docr.tessdataPath=/path/to/tessdata.");
+        }
+        if (this.nativeLibraryPath != null && !this.nativeLibraryPath.isBlank() && !Files.isDirectory(Path.of(this.nativeLibraryPath))) {
+            throw new TesseractException("Tesseract native library directory not found at '" + this.nativeLibraryPath
+                    + "'. Install system Tesseract libraries or override -Docr.nativeLibraryPath=/path/to/native/libs.");
+        }
     }
 
     private void configureNativeLibraryPath() {

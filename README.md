@@ -151,9 +151,24 @@ curl --location 'http://EC2_PUBLIC_IP:8080/getcompanymasterdata' \
   }'
 ```
 
-## Optional OCR Variables
+## OCR Dependencies
 
-Only needed if the dormant Tesseract OCR flow is re-enabled:
+Maven downloads the Java OCR dependency (`tess4j`), but native Tesseract still must be installed on the machine.
+
+macOS:
+
+```bash
+brew install tesseract
+```
+
+Ubuntu/Debian Linux:
+
+```bash
+sudo apt update
+sudo apt install -y tesseract-ocr libtesseract-dev libleptonica-dev
+```
+
+Optional environment variables:
 
 ```bash
 export OCR_TESSDATA_PATH="/usr/share/tessdata"
