@@ -138,7 +138,13 @@ public class MasterDataController {
     }
 
     @PostMapping({"/checkcompanyname"})
-    public String checkCompayName(@RequestBody MasterDataRequest masterDataRequest) throws Exception {
+    public String checkCompayName(@RequestBody MasterDataRequest masterDataRequest, @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
+        String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
+        if (!incomingCookie.isBlank()) {
+            // Company-name OTP completion sends the verified MCA cookie back on this endpoint.
+            System.out.println("Using caller supplied MCA session cookie for checkcompanyname");
+            return this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, incomingCookie, false);
+        }
         LoginResponse loginResponse = this.mcaLoginService.login(masterDataRequest.getUserName(), masterDataRequest.getPassword(), masterDataRequest.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status());
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
@@ -148,10 +154,21 @@ public class MasterDataController {
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
             return loginResponse.cookie();
         }
+        return this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
+    }
+
+    private String checkCompanyNameWithAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie, boolean logoutWhenDone) throws Exception {
+        LoginResponse loginResponse = new LoginResponse(cookie, "Authenticated Cookie", true);
         ValidateCaptchaResponse afterLoginCResponse = this.captchaService.captchaValidatonWrapper(loginResponse.cookie());
+        if (!afterLoginCResponse.status()) {
+            return "Missing request parameter!!!";
+        }
+        LoginResponse captchaCookieLoginResponse = new LoginResponse(afterLoginCResponse.cookie(), loginResponse.message(), loginResponse.status());
         System.out.println(afterLoginCResponse.captcha() + "===" + afterLoginCResponse.preCt());
-        String responseData = this.mcaSearchService.checkCompanyName(masterDataRequest, loginResponse, afterLoginCResponse);
-        this.mcaLoginService.logout(loginResponse.cookie());
+        String responseData = this.mcaSearchService.checkCompanyName(masterDataRequest, captchaCookieLoginResponse, afterLoginCResponse);
+        if (logoutWhenDone) {
+            this.mcaLoginService.logout(captchaCookieLoginResponse.cookie());
+        }
         return responseData;
     }
 
