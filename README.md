@@ -161,6 +161,18 @@ export OCR_LANGUAGE="eng"
 export OCR_NATIVE_LIBRARY_PATH="/usr/lib64"
 ```
 
+Enable the OCR path at runtime with this local macOS/Homebrew example:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Djava.awt.headless=true --enable-native-access=ALL-UNNAMED -Djna.library.path=/opt/homebrew/lib -Docr.tessdataPath=/opt/homebrew/share/tessdata -Docr.nativeLibraryPath=/opt/homebrew/lib -Dmca.captcha.extraction.enabled=true -Dmca.captcha.ocr.enabled=true"
+```
+
+Captcha image audit saving is off by default. Enable it only while collecting test images:
+
+```bash
+-Dmca.captcha.audit.enabled=true
+```
+
 Set these only if Tesseract is installed outside the default library/search paths:
 
 ```bash
