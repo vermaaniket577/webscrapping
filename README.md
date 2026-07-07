@@ -151,9 +151,24 @@ curl --location 'http://EC2_PUBLIC_IP:8080/getcompanymasterdata' \
   }'
 ```
 
-## Optional OCR Variables
+## OCR Dependencies
 
-Only needed if the dormant Tesseract OCR flow is re-enabled:
+Maven downloads the Java OCR dependency (`tess4j`), but native Tesseract still must be installed on the machine.
+
+macOS:
+
+```bash
+brew install tesseract
+```
+
+Ubuntu/Debian Linux:
+
+```bash
+sudo apt update
+sudo apt install -y tesseract-ocr libtesseract-dev libleptonica-dev
+```
+
+Optional environment variables:
 
 ```bash
 export OCR_TESSDATA_PATH="/usr/share/tessdata"
@@ -161,7 +176,7 @@ export OCR_LANGUAGE="eng"
 export OCR_NATIVE_LIBRARY_PATH="/usr/lib64"
 ```
 
-For the local macOS/Homebrew setup, OCR is wired into the Maven Spring Boot run config. Start the server with:
+OCR is wired into the Maven Spring Boot run config. Linux uses the default Tesseract paths, and macOS/Homebrew paths are selected automatically by Maven profile. Start the server with:
 
 ```bash
 mvn spring-boot:run
@@ -175,11 +190,10 @@ Captcha image audit saving is off by default. Enable it only while collecting te
 
 The custom captcha fallback still reads `GEMINI_API_KEY` from the environment.
 
-Set these only if Tesseract is installed outside the default library/search paths:
+Override these only if Tesseract is installed outside the default library/search paths:
 
 ```bash
-export OCR_TESSDATA_PATH="/path/to/tessdata"
-export OCR_NATIVE_LIBRARY_PATH="/path/to/native/libs"
+mvn spring-boot:run -Docr.tessdataPath="/path/to/tessdata" -Docr.nativeLibraryPath="/path/to/native/libs"
 ```
 
 ## Notes
