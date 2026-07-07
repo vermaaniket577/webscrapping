@@ -18,8 +18,8 @@
 
     <properties>
         <java.version>17</java.version>
-        <ocr.tessdataPath>/opt/homebrew/share/tessdata</ocr.tessdataPath>
-        <ocr.nativeLibraryPath>/opt/homebrew/lib</ocr.nativeLibraryPath>
+        <ocr.tessdataPath>/usr/share/tesseract-ocr/5/tessdata</ocr.tessdataPath>
+        <ocr.nativeLibraryPath>/usr/lib/x86_64-linux-gnu</ocr.nativeLibraryPath>
         <mca.captcha.extraction.enabled>true</mca.captcha.extraction.enabled>
         <mca.captcha.ocr.enabled>true</mca.captcha.ocr.enabled>
         <mca.captcha.audit.enabled>false</mca.captcha.audit.enabled>
@@ -82,4 +82,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>macos-homebrew-ocr</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <properties>
+                <ocr.tessdataPath>/opt/homebrew/share/tessdata</ocr.tessdataPath>
+                <ocr.nativeLibraryPath>/opt/homebrew/lib</ocr.nativeLibraryPath>
+            </properties>
+        </profile>
+    </profiles>
 </project>
