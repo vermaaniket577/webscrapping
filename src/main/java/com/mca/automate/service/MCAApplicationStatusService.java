@@ -55,8 +55,9 @@ public class MCAApplicationStatusService {
     }
 
     public ResponseEntity<Resource> docDownloadList(DownloadStatusDocumentDTO docDownloadList, String cookies) throws Exception {
-        if (docDownloadList.getDmsId().length() > 1) {
-            String finalUrl = "https://www.mca.gov.in/bin/mca/dms/dmsservicedownload?mds=" + this.crypto.encrypt(docDownloadList.getDmsId()) + "&type=" + docDownloadList.getRequestType() + "&action=downloaddocument";
+        String dmsId = this.util.safe(docDownloadList.getDmsId());
+        if (dmsId.length() > 1) {
+            String finalUrl = "https://www.mca.gov.in/bin/mca/dms/dmsservicedownload?mds=" + this.crypto.encrypt(dmsId) + "&type=" + docDownloadList.getRequestType() + "&action=downloaddocument";
             return this.downloadDocuments(finalUrl, cookies);
         }
         String srn = this.crypto.encrypt(this.util.stripNewlines(this.util.safe(docDownloadList.getSrn())));

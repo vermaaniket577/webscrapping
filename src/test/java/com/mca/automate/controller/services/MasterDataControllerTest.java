@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mca.automate.dto.DirectorDataRequest;
 import com.mca.automate.dto.LoginResponse;
 import com.mca.automate.dto.MasterDataRequest;
 import com.mca.automate.dto.ValidateCaptchaResponse;
@@ -186,9 +187,65 @@ class MasterDataControllerTest {
         verify(loginService).logout("check-captcha-cookie");
     }
 
+    @Test
+    void suppliedVerifiedCookieFetchesDirectorDataWithoutLoginOrLogout() throws Exception {
+        DirectorDataRequest request = directorDataRequest();
+        when(searchService.searchMasterData(
+                eq("user@example.com"),
+                eq(new LoginResponse("director-cookie", "Authenticated Cookie", true)),
+                eq("01234567"),
+                eq("din")))
+                .thenReturn("director-response");
+
+        String response = controller.fetchDirData(request, "director-cookie\n");
+
+        assertThat(response).isEqualTo("director-response");
+        verify(loginService, never()).login(any(), any(), any(), any());
+        verify(loginService, never()).logout(any());
+    }
+
+    @Test
+    void directorDataOtpRequiredReturnsPlainCookieForOtpStep() throws Exception {
+        DirectorDataRequest request = directorDataRequest();
+        when(loginService.login("user@example.com", "secret", "device-1", "login"))
+                .thenReturn(new LoginResponse("director-otp-cookie", "Otp Required", true));
+
+        String response = controller.fetchDirData(request, null);
+
+        assertThat(response).isEqualTo("director-otp-cookie");
+        verify(searchService, never()).searchMasterData(any(), any(), any(), any());
+    }
+
+    @Test
+    void directorDataLoginSuccessLogsOutWhenDone() throws Exception {
+        DirectorDataRequest request = directorDataRequest();
+        when(loginService.login("user@example.com", "secret", "device-1", "login"))
+                .thenReturn(new LoginResponse("director-login-cookie", "Login Successful", true));
+        when(searchService.searchMasterData(
+                eq("user@example.com"),
+                eq(new LoginResponse("director-login-cookie", "Authenticated Cookie", true)),
+                eq("01234567"),
+                eq("din")))
+                .thenReturn("director-login-response");
+
+        String response = controller.fetchDirData(request, "");
+
+        assertThat(response).isEqualTo("director-login-response");
+        verify(loginService).logout("director-login-cookie");
+    }
+
     private MasterDataRequest masterDataRequest() {
         MasterDataRequest request = new MasterDataRequest();
         request.setCompanyNameOrCIN("L74909DL2008PLC180850");
+        request.setUserName("user@example.com");
+        request.setPassword("secret");
+        request.setDeviceId("device-1");
+        return request;
+    }
+
+    private DirectorDataRequest directorDataRequest() {
+        DirectorDataRequest request = new DirectorDataRequest();
+        request.setDin("01234567");
         request.setUserName("user@example.com");
         request.setPassword("secret");
         request.setDeviceId("device-1");

@@ -54,8 +54,16 @@ public class MCADownloadAnnualFilling {
     }
 
     public ResponseEntity<Resource> downloadDocuments(String dmsID) {
+        return this.downloadDocuments(dmsID, "");
+    }
+
+    public ResponseEntity<Resource> downloadDocuments(String dmsID, String cookies) {
         String fullUrl = "https://www.mca.gov.in/bin/mca/dms/pfmsViewDoc?mds=" + this.crypto.encrypt(dmsID) + "&type=open&action=downloaddocument";
-        Request request = new Request.Builder().url(fullUrl).get().addHeader("accept", "*/*").addHeader("accept-language", "en-US,en;q=0.9").addHeader("referer", "https://www.mca.gov.in/content/mca/global/en/application-history.html").addHeader("x-requested-with", "XMLHttpRequest").addHeader("user-agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36").addHeader("x-requested-with", "XMLHttpRequest").build();
+        Request.Builder requestBuilder = new Request.Builder().url(fullUrl).get().addHeader("accept", "*/*").addHeader("accept-language", "en-US,en;q=0.9").addHeader("referer", "https://www.mca.gov.in/content/mca/global/en/application-history.html").addHeader("x-requested-with", "XMLHttpRequest").addHeader("user-agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36").addHeader("x-requested-with", "XMLHttpRequest");
+        if (cookies != null && !cookies.isBlank()) {
+            requestBuilder.addHeader("Cookie", cookies);
+        }
+        Request request = requestBuilder.build();
         try {
             Response response = this.client.newCall(request).execute();
             try {
