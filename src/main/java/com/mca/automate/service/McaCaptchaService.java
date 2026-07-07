@@ -8,6 +8,7 @@ import com.mca.automate.util.CookieUtil;
 import com.mca.automate.util.CryptoUtil;
 import com.mca.automate.util.CustomCaptchaTextExtractor;
 import com.mca.automate.util.ImageToTextExtractor;
+import com.mca.automate.util.LocalVisionCaptchaTextExtractor;
 import com.mca.automate.util.MimePart;
 import com.mca.automate.util.Preprocess;
 import com.mca.automate.util.Util;
@@ -44,6 +45,7 @@ public class McaCaptchaService {
     private final Util util;
     private final Preprocess preProcess;
     private final ImageToTextExtractor imageToTextExtractor;
+    private final LocalVisionCaptchaTextExtractor localVisionCaptchaTextExtractor;
     private final CustomCaptchaTextExtractor customCaptchaTextExtractor;
     private final CryptoUtil cryptoUtil;
     @Autowired
@@ -55,7 +57,7 @@ public class McaCaptchaService {
         ValidateCaptchaResponse response = null;
         for (int attempt = 1; attempt <= maxRetry; ++attempt) {
             log.info(" Attempt {}/{}", (Object)attempt, (Object)maxRetry);
-            FetchCaptchaResponse captcha = this.getCaptcha(cookie, true);
+            FetchCaptchaResponse captcha = this.getCaptcha(cookie, false);
             if (!captcha.status() || captcha.captcha() == null || captcha.captcha().isBlank()) {
                 log.warn(attempt < maxRetry ? "Captcha fetch/extraction failed. Retrying..." : "Captcha fetch/extraction failed. No attempts left.");
                 if (attempt < maxRetry) {
@@ -81,7 +83,7 @@ public class McaCaptchaService {
     }
 
     public FetchCaptchaResponse getCaptcha(String cookie) throws Exception {
-        return this.getCaptcha(cookie, true);
+        return this.getCaptcha(cookie, false);
     }
 
     public FetchCaptchaResponse getCaptcha(String cookie, boolean forceCustomExtractor) throws Exception {
@@ -109,6 +111,13 @@ public class McaCaptchaService {
             }
             log.info("Captcha image bytes extracted: {}", (Object)image.length);
             String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS").format(new Date());
+            if (this.isCaptchaAuditEnabled()) {
+                this.saveCaptchaPngForAudit(image, timestamp);
+            }
+            if (!this.isCaptchaExtractionEnabled()) {
+                log.info("Captcha OCR/custom extraction is disabled");
+                return new FetchCaptchaResponse("", "", false, cookie);
+            }
             String captchaText = this.readCaptchaWithFallback(image, timestamp, forceCustomExtractor);
             if (!this.isPlausibleCaptcha(captchaText)) {
                 log.warn("OCR produced invalid captcha candidate: {}", (Object)captchaText);
@@ -249,19 +258,57 @@ public class McaCaptchaService {
     }
 
     private String readCaptchaWithFallback(byte[] image, String timestamp, boolean forceCustomExtractor) throws IOException {
+        long startedAt = System.nanoTime();
         String candidate = "";
-        if (!forceCustomExtractor) {
+        if (!forceCustomExtractor && this.isOcrExtractionEnabled()) {
+            long ocrStartedAt = System.nanoTime();
             candidate = this.readCaptchaWithVariants(image, timestamp);
+            log.info("OCR captcha extraction produced candidate '{}' latencyMs={}", candidate, this.elapsedMs(ocrStartedAt));
+            if (this.isPlausibleCaptcha(candidate)) {
+                log.info("Captcha extraction latency totalMs={} winner=ocr", this.elapsedMs(startedAt));
+                return candidate;
+            }
+            log.info("OCR candidate was not plausible; trying custom captcha extractor");
         }
-        if (!forceCustomExtractor && this.isPlausibleCaptcha(candidate)) {
-            return candidate;
-        }
-        log.info("Using custom captcha extractor hook{}", forceCustomExtractor ? " after first OCR attempt" : " because primary OCR flow failed");
-        // The custom extractor works with an image path, so save a short-lived temp PNG.
         String imagePath = this.saveCaptchaPngForFallback(image, timestamp);
         if (imagePath.isBlank()) {
+            log.info("Captcha extraction latency totalMs={}", this.elapsedMs(startedAt));
             return candidate;
         }
+        // Local LLM vision is parked while OCR + custom fallback is under test.
+        // String localVisionCandidate = this.readCaptchaWithLocalVision(imagePath);
+        // if (this.isPlausibleCaptcha(localVisionCandidate)) {
+        //     log.info("Captcha extraction latency totalMs={} winner=localVision", this.elapsedMs(startedAt));
+        //     return localVisionCandidate;
+        // }
+        String customCandidate = this.readCaptchaWithCustomExtractor(imagePath);
+        if (this.isPlausibleCaptcha(customCandidate)) {
+            log.info("Captcha extraction latency totalMs={} winner=customExtractor", this.elapsedMs(startedAt));
+            return customCandidate;
+        }
+        log.info("Captcha extraction latency totalMs={} winner=none", this.elapsedMs(startedAt));
+        return candidate;
+    }
+
+    private String readCaptchaWithLocalVision(String imagePath) {
+        for (int attempt = 1; attempt <= 2; ++attempt) {
+            long startedAt = System.nanoTime();
+            try {
+                String candidate = this.normalizeCaptchaText(this.localVisionCaptchaTextExtractor.extractText(imagePath));
+                log.info("Local vision captcha extractor attempt {} produced candidate '{}' latencyMs={}", attempt, candidate, this.elapsedMs(startedAt));
+                if (this.isPlausibleCaptcha(candidate)) {
+                    return candidate;
+                }
+            }
+            catch (Exception ex) {
+                log.warn("Local vision captcha extractor failed on attempt {} latencyMs={}", attempt, this.elapsedMs(startedAt), ex);
+            }
+        }
+        return "";
+    }
+
+    private String readCaptchaWithCustomExtractor(String imagePath) {
+        long startedAt = System.nanoTime();
         try {
             List<Map.Entry<String, Double>> sortedGuesses = this.customCaptchaTextExtractor.extractText(imagePath).entrySet()
                     .stream()
@@ -272,18 +319,24 @@ public class McaCaptchaService {
                 log.info("Custom extractor guess '{}' probability {}", guess.getKey(), guess.getValue());
             }
 
-            String customCandidate = sortedGuesses.isEmpty()
+            String candidate = sortedGuesses.isEmpty()
                     ? ""
                     : this.normalizeCaptchaText(sortedGuesses.get(0).getKey());
-            if (!customCandidate.isBlank()) {
-                log.info("Custom captcha extractor produced candidate '{}'", (Object)customCandidate);
-                return customCandidate;
+            if (!candidate.isBlank()) {
+                log.info("Custom captcha extractor produced candidate '{}' latencyMs={}", candidate, this.elapsedMs(startedAt));
+            } else {
+                log.info("Custom captcha extractor produced no candidate latencyMs={}", this.elapsedMs(startedAt));
             }
+            return candidate;
         }
         catch (Exception ex) {
-            log.warn("Custom captcha extractor failed", (Throwable)ex);
+            log.warn("Custom captcha extractor failed latencyMs={}", this.elapsedMs(startedAt), ex);
+            return "";
         }
-        return candidate;
+    }
+
+    private long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000L;
     }
 
     private String normalizeCaptchaText(String text) {
@@ -295,6 +348,18 @@ public class McaCaptchaService {
 
     private boolean isPlausibleCaptcha(String captchaText) {
         return captchaText != null && CAPTCHA_PATTERN.matcher(captchaText).matches();
+    }
+
+    private boolean isCaptchaExtractionEnabled() {
+        return Boolean.parseBoolean(System.getProperty("mca.captcha.extraction.enabled", "false"));
+    }
+
+    private boolean isOcrExtractionEnabled() {
+        return Boolean.parseBoolean(System.getProperty("mca.captcha.ocr.enabled", "false"));
+    }
+
+    private boolean isCaptchaAuditEnabled() {
+        return Boolean.parseBoolean(System.getProperty("mca.captcha.audit.enabled", "false"));
     }
 
     private String saveCaptchaPngForFallback(byte[] imageBytes, String timestamp) {
@@ -313,6 +378,24 @@ public class McaCaptchaService {
         catch (Exception e) {
             log.error("Failed to save fallback captcha image", e);
             return "";
+        }
+    }
+
+    private void saveCaptchaPngForAudit(byte[] imageBytes, String timestamp) {
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+            if (image == null) {
+                log.warn("Could not decode captcha image for audit output");
+                return;
+            }
+            Path outputDir = Path.of(System.getProperty("mca.captcha.audit.dir", "captchas"));
+            Files.createDirectories(outputDir);
+            Path outputFile = outputDir.resolve("captcha_" + timestamp + ".png");
+            ImageIO.write(image, "png", outputFile.toFile());
+            log.info("Captcha image saved for future OCR use at: {}", outputFile.toAbsolutePath());
+        }
+        catch (Exception e) {
+            log.warn("Failed to save captcha image for future OCR use", e);
         }
     }
 
@@ -343,11 +426,12 @@ public class McaCaptchaService {
     }
 
     @Generated
-    public McaCaptchaService(HttpClientService http, Util util, Preprocess preProcess, ImageToTextExtractor imageToTextExtractor, CustomCaptchaTextExtractor customCaptchaTextExtractor, CryptoUtil cryptoUtil) {
+    public McaCaptchaService(HttpClientService http, Util util, Preprocess preProcess, ImageToTextExtractor imageToTextExtractor, LocalVisionCaptchaTextExtractor localVisionCaptchaTextExtractor, CustomCaptchaTextExtractor customCaptchaTextExtractor, CryptoUtil cryptoUtil) {
         this.http = http;
         this.util = util;
         this.preProcess = preProcess;
         this.imageToTextExtractor = imageToTextExtractor;
+        this.localVisionCaptchaTextExtractor = localVisionCaptchaTextExtractor;
         this.customCaptchaTextExtractor = customCaptchaTextExtractor;
         this.cryptoUtil = cryptoUtil;
     }

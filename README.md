@@ -161,6 +161,20 @@ export OCR_LANGUAGE="eng"
 export OCR_NATIVE_LIBRARY_PATH="/usr/lib64"
 ```
 
+For the local macOS/Homebrew setup, OCR is wired into the Maven Spring Boot run config. Start the server with:
+
+```bash
+mvn spring-boot:run
+```
+
+Captcha image audit saving is off by default. Enable it only while collecting test images:
+
+```bash
+-Dmca.captcha.audit.enabled=true
+```
+
+The custom captcha fallback still reads `GEMINI_API_KEY` from the environment.
+
 Set these only if Tesseract is installed outside the default library/search paths:
 
 ```bash

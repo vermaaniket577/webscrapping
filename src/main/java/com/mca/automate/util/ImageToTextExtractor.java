@@ -23,6 +23,7 @@ public class ImageToTextExtractor {
         tesseract.setDatapath(this.ocrTesseract);
         tesseract.setLanguage(this.ocrLang);
         tesseract.setPageSegMode(8);
+        tesseract.setOcrEngineMode(1);
         tesseract.setTessVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
         tesseract.setTessVariable("load_system_dawg", "0");
         tesseract.setTessVariable("load_freq_dawg", "0");
