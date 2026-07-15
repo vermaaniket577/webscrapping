@@ -12,6 +12,7 @@ spring:
     open-in-view: false
 
 server:
+  port: ${PORT:8080}
   tomcat:
     threads:
       max: ${SERVER_TOMCAT_THREADS_MAX:100}
