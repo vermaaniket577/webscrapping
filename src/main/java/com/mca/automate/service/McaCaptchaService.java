@@ -53,7 +53,7 @@ public class McaCaptchaService {
 
     public ValidateCaptchaResponse captchaValidatonWrapper(String cookie) throws Exception {
         log.info("=== Starting Captcha Wrapper ===");
-        int maxRetry = 3;
+        int maxRetry = 15;
         ValidateCaptchaResponse response = null;
         for (int attempt = 1; attempt <= maxRetry; ++attempt) {
             log.info(" Attempt {}/{}", (Object)attempt, (Object)maxRetry);

@@ -18,8 +18,8 @@
 
     <properties>
         <java.version>17</java.version>
-        <ocr.tessdataPath>/usr/share/tesseract-ocr/5/tessdata</ocr.tessdataPath>
-        <ocr.nativeLibraryPath>/usr/lib/x86_64-linux-gnu</ocr.nativeLibraryPath>
+        <ocr.tessdataPath>C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606/tessdata</ocr.tessdataPath>
+        <ocr.nativeLibraryPath>C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606</ocr.nativeLibraryPath>
         <mca.captcha.extraction.enabled>true</mca.captcha.extraction.enabled>
         <mca.captcha.ocr.enabled>true</mca.captcha.ocr.enabled>
         <mca.captcha.audit.enabled>false</mca.captcha.audit.enabled>
@@ -63,6 +63,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Tess4J for OCR (Optical Character Recognition) -->
+    <dependency>
+        <groupId>net.sourceforge.tess4j</groupId>
+        <artifactId>tess4j</artifactId>
+        <version>5.8.0</version>
+    </dependency>
     </dependencies>
 
     <build>
@@ -71,7 +77,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <jvmArguments>-Djava.awt.headless=true --enable-native-access=ALL-UNNAMED -Djna.library.path=${ocr.nativeLibraryPath} -Docr.tessdataPath=${ocr.tessdataPath} -Docr.nativeLibraryPath=${ocr.nativeLibraryPath} -Dmca.captcha.extraction.enabled=${mca.captcha.extraction.enabled} -Dmca.captcha.ocr.enabled=${mca.captcha.ocr.enabled} -Dmca.captcha.audit.enabled=${mca.captcha.audit.enabled}</jvmArguments>
+                    <jvmArguments>-Djava.awt.headless=true --enable-native-access=ALL-UNNAMED "-Djna.library.path=${ocr.nativeLibraryPath}" "-Docr.tessdataPath=${ocr.tessdataPath}" "-Docr.nativeLibraryPath=${ocr.nativeLibraryPath}" -Dmca.captcha.extraction.enabled=${mca.captcha.extraction.enabled} -Dmca.captcha.ocr.enabled=${mca.captcha.ocr.enabled} -Dmca.captcha.audit.enabled=${mca.captcha.audit.enabled}</jvmArguments>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
