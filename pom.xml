@@ -63,12 +63,6 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Tess4J for OCR (Optical Character Recognition) -->
-    <dependency>
-        <groupId>net.sourceforge.tess4j</groupId>
-        <artifactId>tess4j</artifactId>
-        <version>5.8.0</version>
-    </dependency>
     </dependencies>
 
     <build>
