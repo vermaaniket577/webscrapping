@@ -28,8 +28,9 @@ mca:
     iterations: ${MCA_CRYPTO_ITERATIONS:100}
 
 ocr:
+  # Local Windows defaults (uncomment for local testing):
   # tessdataPath: ${OCR_TESSDATA_PATH:C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606/tessdata}
+  # nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606}
   tessdataPath: ${OCR_TESSDATA_PATH:/usr/local/share/tessdata}
   language: ${OCR_LANGUAGE:eng}
-  # nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606}
   nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:}
