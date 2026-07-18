@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 public class OtpSessionStore {
     private static final Duration SESSION_TTL = Duration.ofMinutes(20);
     private final Map<String, OtpSession> sessions = new ConcurrentHashMap<>();
+    // Keyed by email+deviceId so /verifyotpp can recover the login cookie without the client pasting it.
+    private final Map<String, ClientSession> clientSessions = new ConcurrentHashMap<>();
 
     public void remember(String cookie, String sblUserId) {
         String key = this.sessionKey(cookie);
@@ -18,6 +20,37 @@ public class OtpSessionStore {
         }
         // Key by stable MCA cookies so OTP verification can recover sblUserId after cookie updates.
         this.sessions.put(key, new OtpSession(sblUserId.trim(), Instant.now()));
+    }
+
+    public void rememberClient(String email, String deviceId, String cookie, String sblUserId) {
+        String key = this.clientKey(email, deviceId);
+        if (key.isBlank() || cookie == null || cookie.isBlank()) {
+            return;
+        }
+        this.clientSessions.put(key, new ClientSession(cookie, sblUserId == null ? "" : sblUserId.trim(), Instant.now()));
+    }
+
+    public String cookieForClient(String email, String deviceId) {
+        String key = this.clientKey(email, deviceId);
+        if (key.isBlank()) {
+            return "";
+        }
+        ClientSession session = this.clientSessions.get(key);
+        if (session == null) {
+            return "";
+        }
+        if (session.createdAt().plus(SESSION_TTL).isBefore(Instant.now())) {
+            this.clientSessions.remove(key);
+            return "";
+        }
+        return session.cookie();
+    }
+
+    private String clientKey(String email, String deviceId) {
+        if (email == null || email.isBlank() || deviceId == null || deviceId.isBlank()) {
+            return "";
+        }
+        return email.trim().toLowerCase() + "|" + deviceId.trim();
     }
 
     public String sblUserId(String cookie) {
@@ -60,5 +93,8 @@ public class OtpSessionStore {
     }
 
     private record OtpSession(String sblUserId, Instant createdAt) {
+    }
+
+    private record ClientSession(String cookie, String sblUserId, Instant createdAt) {
     }
 }

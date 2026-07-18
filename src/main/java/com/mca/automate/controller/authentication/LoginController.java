@@ -47,7 +47,7 @@ public class LoginController {
         if (false == loginResponse.status()) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, loginResponse.message(), null);
         }
-        return ResponseUtil.build(HttpStatus.OK, loginResponse.message(), null);
+        return ResponseUtil.build(HttpStatus.OK, loginResponse.message(), loginResponse.cookie());
     }
 
     @PostMapping({"/rocregister"})

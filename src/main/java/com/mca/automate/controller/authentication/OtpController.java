@@ -4,6 +4,7 @@ import com.mca.automate.dto.ApiResponse;
 import com.mca.automate.dto.VerifyOtpDTO;
 import com.mca.automate.service.McaLoginService;
 import com.mca.automate.service.OtpService;
+import com.mca.automate.service.OtpSessionStore;
 import com.mca.automate.util.ResponseUtil;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +24,19 @@ public class OtpController {
     @Autowired
     McaLoginService mcaLoginService;
 
+    @Autowired
+    OtpSessionStore otpSessionStore;
+
     @PostMapping({"/verifyotpp"})
     public ResponseEntity<ApiResponse> verifyOtp(@RequestBody VerifyOtpDTO verifyOtpDTO) throws IOException {
+        // Recover the login cookie server-side when the client did not send one, so the fragile cookie no longer has to round-trip through JSON.
+        if (verifyOtpDTO.getCookie() == null || verifyOtpDTO.getCookie().isBlank()) {
+            String recovered = this.otpSessionStore.cookieForClient(verifyOtpDTO.getEmail(), verifyOtpDTO.getDeviceId());
+            if (recovered == null || recovered.isBlank()) {
+                return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp session expired, please login again", null);
+            }
+            verifyOtpDTO.setCookie(recovered);
+        }
         String cookie = this.otpService.verifOtp(verifyOtpDTO);
         if (cookie == null || cookie.isBlank() || "failed".equalsIgnoreCase(cookie)) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp Verification Failed", null);

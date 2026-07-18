@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 
 /* JADX INFO: loaded from: MasterDataController.class */
 @RestController
@@ -44,28 +46,39 @@ public class MasterDataController {
     @Autowired
     CookieService cookieService;
 
-    @PostMapping({ "/getcompanymasterdata" })
-    public String fetchMasterData(@RequestBody MasterDataRequest masterDataRequest,
+    private ResponseEntity<?> formatResponse(String responseData) {
+        if (responseData == null) return ResponseEntity.ok().build();
+        if (responseData.startsWith("Missing request parameter") || responseData.startsWith("Login Failed")
+                || responseData.startsWith("Captcha validation failed")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", responseData));
+        }
+        if (responseData.startsWith("{\"error\":\"MCA")) {
+            // Upstream MCA refused or failed the call; keep the compact JSON body but flag it as a
+            // gateway error instead of masking it behind 200 OK.
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).contentType(MediaType.APPLICATION_JSON)
+                    .body(responseData);
+        }
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(responseData);
+    }
+
+    @PostMapping(value = { "/getcompanymasterdata" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> fetchMasterData(@RequestBody MasterDataRequest masterDataRequest,
             @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
         if (!incomingCookie.isBlank()) {
-            // OTP verification returns an authenticated MCA cookie; callers can reuse it
-            // here to skip login.
             System.out.println("Using caller supplied MCA session cookie for getcompanymasterdata");
-            return this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, incomingCookie, false);
+            return formatResponse(this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, incomingCookie, false));
         }
         LoginResponse loginResponse = this.mcaLoginService.login(masterDataRequest.getUserName(),
                 masterDataRequest.getPassword(), masterDataRequest.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
-            return loginResponse.message();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", loginResponse.message()));
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
-            // Login is intentionally split here: client verifies OTP, then calls back with
-            // the verified cookie.
-            return loginResponse.cookie();
+            return ResponseEntity.ok(Map.of("message", "Otp Required", "cookie", loginResponse.cookie()));
         }
-        return this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
+        return formatResponse(this.fetchMasterDataWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true));
     }
 
     private String fetchMasterDataWithAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie,
@@ -95,30 +108,53 @@ public class MasterDataController {
     }
 
     private String normalizeIncomingCookie(String cookie) {
-        return this.util.stripNewlines(this.util.safe(cookie));
+        String normalized = this.util.stripNewlines(this.util.safe(cookie));
+        if (normalized.isBlank()) {
+            return "";
+        }
+        // Only a fully authenticated MCA jar may skip login. _csrf/__UUID-HASH exist on every
+        // anonymous visit (the captcha bootstrap sets them), so they prove nothing. The cookies
+        // MCA's protected servlets actually authenticate with are sessionID + session-token-md5 -
+        // the same pair login/verifiedOTPLogin refuse to report success without.
+        if (!hasCookie(normalized, "sessionID") || !hasCookie(normalized, "session-token-md5")) {
+            System.out.println("Ignoring caller cookie without sessionID/session-token-md5; falling back to login");
+            return "";
+        }
+        return normalized;
     }
 
-    @PostMapping({ "/getcompanymasterdataWithName" })
-    public String fetchMasterDataWithName(@RequestBody MasterDataRequest masterDataRequest,
+    // True when the cookie string contains a non-blank value for the given cookie name.
+    private boolean hasCookie(String cookie, String name) {
+        if (cookie == null || cookie.isBlank()) {
+            return false;
+        }
+        for (String part : cookie.split(";")) {
+            String[] kv = part.trim().split("=", 2);
+            if (kv.length == 2 && name.equals(kv[0].trim()) && !kv[1].trim().isBlank()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @PostMapping(value = { "/getcompanymasterdataWithName" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> fetchMasterDataWithName(@RequestBody MasterDataRequest masterDataRequest,
             @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
         if (!incomingCookie.isBlank()) {
-            // OTP verification returns an authenticated MCA cookie; callers can reuse it
-            // here to skip login.
             System.out.println("Using caller supplied MCA session cookie for getcompanymasterdataWithName");
-            return this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, incomingCookie, false);
+            return formatResponse(this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, incomingCookie, false));
         }
         LoginResponse loginResponse = this.mcaLoginService.login(masterDataRequest.getUserName(),
                 masterDataRequest.getPassword(), masterDataRequest.getDeviceId(), "login");
-        System.out.println("Login Response is " + loginResponse.status());
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
-            return loginResponse.message();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", loginResponse.message()));
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
-            return loginResponse.cookie();
+            return ResponseEntity.ok(Map.of("message", "Otp Required", "cookie", loginResponse.cookie()));
         }
-        return this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
+        return formatResponse(this.fetchMasterDataWithNameAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true));
     }
 
     private String fetchMasterDataWithNameAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie,
@@ -144,28 +180,25 @@ public class MasterDataController {
         return responseData;
     }
 
-    @PostMapping({ "/getdirectordata" })
-    public String fetchDirData(@RequestBody DirectorDataRequest directorDataRequest,
+    @PostMapping(value = { "/getdirectordata" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> fetchDirData(@RequestBody DirectorDataRequest directorDataRequest,
             @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         System.out.println("inside Din Data+++++++");
         String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
         if (!incomingCookie.isBlank()) {
-            // OTP verification returns an authenticated MCA cookie; reuse it instead of
-            // starting login again.
             System.out.println("Using caller supplied MCA session cookie for getdirectordata");
-            return this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, incomingCookie, false);
+            return formatResponse(this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, incomingCookie, false));
         }
         LoginResponse loginResponse = this.mcaLoginService.login(directorDataRequest.getUserName(),
                 directorDataRequest.getPassword(), directorDataRequest.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
-            return loginResponse.message();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", loginResponse.message()));
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
-            return loginResponse.cookie();
+            return ResponseEntity.ok(Map.of("message", "Otp Required", "cookie", loginResponse.cookie()));
         }
-        System.out.println("Login Response is " + loginResponse.status());
-        return this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, loginResponse.cookie(), true);
+        return formatResponse(this.fetchDirectorDataWithAuthenticatedCookie(directorDataRequest, loginResponse.cookie(), true));
     }
 
     private String fetchDirectorDataWithAuthenticatedCookie(DirectorDataRequest directorDataRequest, String cookie,
@@ -179,27 +212,24 @@ public class MasterDataController {
         return responseData;
     }
 
-    @PostMapping({ "/checkcompanyname" })
-    public String checkCompayName(@RequestBody MasterDataRequest masterDataRequest,
+    @PostMapping(value = { "/checkcompanyname" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> checkCompayName(@RequestBody MasterDataRequest masterDataRequest,
             @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
         String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
         if (!incomingCookie.isBlank()) {
-            // Company-name OTP completion sends the verified MCA cookie back on this
-            // endpoint.
             System.out.println("Using caller supplied MCA session cookie for checkcompanyname");
-            return this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, incomingCookie, false);
+            return formatResponse(this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, incomingCookie, false));
         }
         LoginResponse loginResponse = this.mcaLoginService.login(masterDataRequest.getUserName(),
                 masterDataRequest.getPassword(), masterDataRequest.getDeviceId(), "login");
-        System.out.println("Login Response is " + loginResponse.status());
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
-            return loginResponse.message();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", loginResponse.message()));
         }
         if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
-            return loginResponse.cookie();
+            return ResponseEntity.ok(Map.of("message", "Otp Required", "cookie", loginResponse.cookie()));
         }
-        return this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true);
+        return formatResponse(this.checkCompanyNameWithAuthenticatedCookie(masterDataRequest, loginResponse.cookie(), true));
     }
 
     private String checkCompanyNameWithAuthenticatedCookie(MasterDataRequest masterDataRequest, String cookie,
@@ -221,9 +251,9 @@ public class MasterDataController {
         return responseData;
     }
 
-    @GetMapping({ "/dinstatus/{din}" })
-    public String dinstatus(@PathVariable String din) throws Exception {
-        return this.mcaSearchService.checkDinStatus(din);
+    @GetMapping(value = { "/dinstatus/{din}" }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> dinstatus(@PathVariable String din) throws Exception {
+        return formatResponse(this.mcaSearchService.checkDinStatus(din));
     }
 
     /**
@@ -274,4 +304,64 @@ public class MasterDataController {
     public Map<String, Object> findDinPanUrl() {
         return this.mcaSearchService.findDinPanUrl();
     }
+
+    // ---- Directors / Designated partners: search by DIN/DPIN ----
+
+    @PostMapping({ "/getdirectormasterdata" })
+public String fetchDirectorMasterData(@RequestBody DirectorDataRequest directorDataRequest,
+        @RequestHeader(value = "Cookie", required = false) String sessionCookie) throws Exception {
+    String incomingCookie = this.normalizeIncomingCookie(sessionCookie);
+    if (!incomingCookie.isBlank()) {
+        // OTP verification returns an authenticated MCA cookie; reuse it to skip login.
+        System.out.println("Using caller supplied MCA session cookie for getdirectormasterdata");
+        return this.fetchDirectorMasterDataWithAuthenticatedCookie(directorDataRequest, incomingCookie, false);
+    }
+    LoginResponse loginResponse = this.mcaLoginService.login(directorDataRequest.getUserName(),
+            directorDataRequest.getPassword(), directorDataRequest.getDeviceId(), "login");
+    System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
+    if (false == loginResponse.status()) {
+        return loginResponse.message();
+    }
+    if (loginResponse.status() && "Otp Required".equalsIgnoreCase(loginResponse.message())) {
+        // Login split: client verifies OTP, then calls back with the verified cookie.
+        return loginResponse.cookie();
+    }
+    return this.fetchDirectorMasterDataWithAuthenticatedCookie(directorDataRequest, loginResponse.cookie(), true);
 }
+
+private String fetchDirectorMasterDataWithAuthenticatedCookie(DirectorDataRequest directorDataRequest,
+        String cookie, boolean logoutWhenDone) throws Exception {
+    LoginResponse loginResponse = new LoginResponse(cookie, "Authenticated Cookie", true);
+    // MCA requires a fresh captcha for the master-data servlet even after login.
+    ValidateCaptchaResponse afterLoginCResponse = this.captchaService
+            .captchaValidatonWrapper(loginResponse.cookie());
+    if (!afterLoginCResponse.status()) {
+        return "Missing request parameter!!!";
+    }
+    LoginResponse captchaCookieLoginResponse = new LoginResponse(afterLoginCResponse.cookie(),
+            loginResponse.message(), loginResponse.status());
+    System.out.println(afterLoginCResponse.captcha() + "===" + afterLoginCResponse.preCt());
+
+    // Best-effort autosuggest (mirrors the "Directors/Designated partners" radio).
+    // Its result is NOT used for the fetch below, so a wrong mdsSearchType won't break anything.
+    try {
+        String dSearchResponseJson = this.mcaSearchService.searchDirector(directorDataRequest.getDin(),
+                captchaCookieLoginResponse, afterLoginCResponse);
+        System.out.println("Director Search Data " + dSearchResponseJson);
+    } catch (Exception e) {
+        System.out.println("Director autosuggest skipped: " + e.getMessage());
+    }
+
+    // Master-data fetch by DIN (requestID=din handled inside searchMasterData).
+    String responseData = this.mcaSearchService.searchMasterData(directorDataRequest.getDin(),
+            captchaCookieLoginResponse, directorDataRequest.getDin(), "din");
+    if (logoutWhenDone) {
+        // Don't logout caller-supplied cookies; those are owned by the OTP/manual client flow.
+        this.mcaLoginService.logout(captchaCookieLoginResponse.cookie());
+    }
+    return responseData;
+}
+
+
+}
+

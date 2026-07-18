@@ -173,6 +173,20 @@ public class Util {
         return results.get(0).path("cnNmbr").asText();
     }
 
+    public String extractDIN(String jsonString) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(jsonString);
+        JsonNode results = root.path("data").path("result");
+        if (!results.isArray() || results.isEmpty()) {
+            return "";
+        }
+        JsonNode firstResult = results.get(0);
+        if (!firstResult.path("id").isMissingNode()) return firstResult.path("id").asText();
+        if (!firstResult.path("din").isMissingNode()) return firstResult.path("din").asText();
+        if (!firstResult.path("cnNmbr").isMissingNode()) return firstResult.path("cnNmbr").asText();
+        return "";
+    }
+
     private String normalizeIdentifier(String value) {
         return this.safe(value).replaceAll("\\s+", "").toUpperCase();
     }
