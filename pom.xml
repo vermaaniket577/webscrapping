@@ -18,14 +18,22 @@
 
     <properties>
         <java.version>17</java.version>
-        <ocr.tessdataPath>C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606/tessdata</ocr.tessdataPath>
-        <ocr.nativeLibraryPath>C:/Program Files/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606</ocr.nativeLibraryPath>
+        <ocr.tessdataPath>C:/tesseract-5.4.0.20240606/tesseract-5.4.0.20240606/tessdata</ocr.tessdataPath>
+        <!-- Blank: the folder above is the Tesseract source tree (no native DLLs), so tess4j loads its
+             own bundled Windows natives. Set this only if you install a compiled Tesseract with libtesseract*.dll. -->
+        <ocr.nativeLibraryPath></ocr.nativeLibraryPath>
         <mca.captcha.extraction.enabled>true</mca.captcha.extraction.enabled>
         <mca.captcha.ocr.enabled>true</mca.captcha.ocr.enabled>
         <mca.captcha.audit.enabled>false</mca.captcha.audit.enabled>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -53,6 +61,11 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+    <groupId>org.jsoup</groupId>
+    <artifactId>jsoup</artifactId>
+    <version>1.17.2</version>
+</dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

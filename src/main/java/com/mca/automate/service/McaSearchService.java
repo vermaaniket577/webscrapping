@@ -152,6 +152,8 @@ public class McaSearchService {
             System.out.println("MDS master-data request blocked because _csrf cookie is missing");
             return "Missing request parameter!!!";
         }
+        // The DIN goes into plainData as-is; only the assembled payload is encrypted
+        // (same as the CIN branch below, and as every other MCA servlet call).
         String plainData = "ID=" + searchResponse + "&requestID=din&userInput=" + cap.captcha() + "&pre_CT="
                 + cap.preCt();
         String data = "data=" + this.crypto.encrypt(plainData) + "&csrfToken=" + this.crypto.encrypt(csrf)
@@ -180,6 +182,18 @@ public class McaSearchService {
             System.out.println("-----------------" + resp.code());
             String respo = resp.body() == null ? "" : resp.body().string();
             System.out.println("Final Search Response body is-----------------" + respo);
+            if (resp.code() == 401 || resp.code() == 403) {
+                // MCA's Apache front-end answers with a huge multi-language HTML page here;
+                // collapse it into a compact JSON error instead of dumping raw HTML on the caller.
+                return "{\"error\":\"MCA session unauthorized\",\"mcaHttpStatus\":" + resp.code()
+                        + ",\"message\":\"MCA rejected the master-data request because the session is not fully"
+                        + " authenticated. Login did not produce a usable MCA session (wrong credentials, expired"
+                        + " session cookie, or the account requires OTP verification).\"}";
+            }
+            if (resp.code() != 200) {
+                return "{\"error\":\"MCA request failed\",\"mcaHttpStatus\":" + resp.code()
+                        + ",\"message\":\"Unexpected response from the MCA master-data service. Please retry.\"}";
+            }
             return respo;
         }
     }
@@ -464,4 +478,42 @@ public class McaSearchService {
         }
         return result;
     }
+    public String searchDirector(String searchKeyword, LoginResponse loginResponse,
+        ValidateCaptchaResponse cResponse) throws IOException {
+    System.out.println("inside director search " + cResponse.captcha() + "===" + cResponse.preCt());
+    // searchKeyword = DIN/DPIN (or a director name for name search).
+    // mdsSearchType encodes the "Directors/Designated partners" radio. "director" is the
+    // assumed value; confirm it by reading the MDS clientlib JS or decrypting a captured
+    // commonSearch payload. A wrong value here does NOT break /getdirectormasterdata,
+    // because that endpoint fetches by DIN via searchMasterData regardless.
+    String plain = "module=MDS&searchKeyWord=" + searchKeyword
+            + "&searchType=autosuggest&mdsSearchType=director&userInput=" + cResponse.captcha() + "&pre_CT="
+            + cResponse.preCt();
+    System.out.println("plain body is for director search " + plain);
+    String cookie = this.latestCookie(loginResponse, cResponse);
+    String csrf = this.util.getCsrf(cookie);
+    if (csrf == null || csrf.isBlank()) {
+        System.out.println("MDS director commonSearch blocked because _csrf cookie is missing");
+        return "Missing request parameter!!!";
+    }
+    String encrypted = this.crypto.encrypt(plain);
+    String body = "data=" + encrypted + "&csrfToken=" + this.crypto.encrypt(csrf) + "&csrfDecode=false";
+    Request req = new Request.Builder().url(SEARCH_URL).post(RequestBody.create(body, FORM))
+            .header("cookie", cookie).header("accept", "application/json, text/javascript, */*; q=0.01")
+            .header("accept-language", "en-GB,en-US;q=0.9,en;q=0.8").header("origin", "https://www.mca.gov.in")
+            .header("referer", "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html")
+            .header("sec-fetch-dest", "empty").header("sec-fetch-mode", "cors")
+            .header("sec-fetch-site", "same-origin").header("x-requested-with", "XMLHttpRequest")
+            .header("user-agent",
+                    "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36")
+            .build();
+    try (Response resp = this.http.execute(req)) {
+        String respBody = resp.body() == null ? "" : resp.body().string();
+        System.out.println(" Responsebody is for director search " + respBody);
+        return respBody;
+    }
 }
+
+
+}
+

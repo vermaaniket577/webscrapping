@@ -120,13 +120,48 @@ public class McaLoginService {
                     }
                     String forceLoginPayLoadEncrypted = this.crypto.encrypt(forceLoginPayLoad) + "&csrfToken=" + this.crypto.encrypt(forceLoginCsrf) + "&csrfDecode=false";
                     try (Response forceLoginResponse = loginRequestExecuter(LOGIN_URL, forceLoginPayLoadEncrypted, newCookie2)) {
+                        String forceLoginBody = forceLoginResponse.body() == null ? "" : forceLoginResponse.body().string();
+                        String forceLoginCookie = this.cookieUtil.updateCookies(newCookie2, forceLoginResponse);
                         System.out.println("++++++ Inside 208 response code is " + forceLoginResponse.code());
-                        System.out.println("++++++ Inside 208 response body is " + (forceLoginResponse.body() == null ? "" : forceLoginResponse.body().string()));
-                        if (forceLoginResponse.code() == 200) {
-                            return new LoginResponse(this.cookieUtil.updateCookies(newCookie2, forceLoginResponse), "Login Successful", true);
+                        if (forceLoginResponse.code() != 200 || forceLoginBody.isBlank()) {
+                            return new LoginResponse(forceLoginCookie, "Force login failed with HTTP " + forceLoginResponse.code(), false);
                         }
+                        // HTTP 200 only means MCA accepted the POST; the verdict is the encrypted resCode.
+                        String forceLoginRaw = this.crypto.decrypt(forceLoginBody);
+                        System.out.println("++++++ Inside 208 decrypted response body is " + forceLoginRaw);
+                        String forceLoginResCode = mapper.readTree(forceLoginRaw).path("resCode").asText();
+                        if ("206".equalsIgnoreCase(forceLoginResCode)) {
+                            String forceMobile = this.util.getJsonField(forceLoginRaw, "mobile");
+                            String forceEmail = this.util.getJsonField(forceLoginRaw, "email");
+                            String forceSblUserId = this.util.getJsonField(forceLoginRaw, "sblUserId");
+                            String forceOtpCookie = this.otpService.sendOtp(forceMobile, forceEmail, forceLoginCookie, "sameOTP", "User_Login");
+                            this.otpSessionStore.remember(forceOtpCookie, forceSblUserId);
+                            this.otpSessionStore.rememberClient(username, deviceId, forceOtpCookie, forceSblUserId);
+                            return new LoginResponse(forceOtpCookie, "Otp Required", true);
+                        }
+                        if (!"200".equalsIgnoreCase(forceLoginResCode)) {
+                            return new LoginResponse(forceLoginCookie, this.mcaLoginErrorMessage(forceLoginRaw), false);
+                        }
+                        // Same guard as the direct-login path: no session cookies means no usable session,
+                        // and reporting success here is what leaves callers with a silent 401 downstream.
+                        String forceSessionId = "";
+                        String forceSessionMd5 = "";
+                        for (String h : forceLoginResponse.headers("Set-Cookie")) {
+                            for (HttpCookie c : HttpCookie.parse(h)) {
+                                if (c.getName().equals("sessionID")) {
+                                    forceSessionId = c.getValue();
+                                }
+                                if (c.getName().equals("session-token-md5")) {
+                                    forceSessionMd5 = c.getValue();
+                                }
+                            }
+                        }
+                        System.out.println("++++++ Force login Session Id is " + forceSessionId + " +++++ Session md5 is " + forceSessionMd5);
+                        if (forceSessionId.isEmpty() || forceSessionMd5.isEmpty()) {
+                            return new LoginResponse(forceLoginCookie, "Login Failed please connect to Administrator", false);
+                        }
+                        return new LoginResponse(forceLoginCookie, "Login Successful", true);
                     }
-                    return new LoginResponse(newCookie2, "Login failed", false);
                 }
                 if ("206".equalsIgnoreCase(resCode)) {
                     System.out.println("++++++ Inside 206");
@@ -139,6 +174,8 @@ public class McaLoginService {
                         newCookie3 = this.otpService.sendOtp(mobile, email, newCookie3, "onlyEmailOTP", "New_Device_Notify");
                     }
                     this.otpSessionStore.remember(newCookie3, sblUserId);
+                    // Also stash the cookie by email+deviceId so /verifyotpp can recover it without the client pasting it back.
+                    this.otpSessionStore.rememberClient(username, deviceId, newCookie3, sblUserId);
                     return new LoginResponse(newCookie3, "Otp Required", true);
                 }
                 if (!"200".equalsIgnoreCase(resCode)) {

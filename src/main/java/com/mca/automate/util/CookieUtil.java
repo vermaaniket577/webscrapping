@@ -129,12 +129,39 @@ public class CookieUtil {
         for (String header : response.headers("Set-Cookie")) {
             String cookiePart = header.split(";")[0];
             String[] kv2 = cookiePart.split("=", 2);
-            if (kv2.length == 2) {
-                cookieMap.put(kv2[0].trim(), kv2[1].trim());
+            if (kv2.length != 2) {
+                continue;
             }
+            String name = kv2[0].trim();
+            String value = kv2[1].trim();
+            // A blank value (usually paired with Max-Age=0 / a past Expires) is the server deleting
+            // the cookie. Storing it verbatim overwrites a live sessionID with "" and then echoes
+            // "sessionID=" back on every later call, which MCA reads as "no session" -> 401.
+            if (value.isEmpty() || isCookieExpired(header)) {
+                if (cookieMap.remove(name) != null) {
+                    System.out.println("MCA cleared cookie '" + name + "'; dropping it from the jar");
+                }
+                continue;
+            }
+            cookieMap.put(name, value);
         }
         System.out.println("Updated cookie names: " + cookieMap.keySet());
         return this.cookieMapToString(cookieMap);
+    }
+
+    // True when the Set-Cookie header carries Max-Age=0 (or negative), i.e. an explicit deletion.
+    private boolean isCookieExpired(String setCookieHeader) {
+        for (String attribute : setCookieHeader.split(";")) {
+            String trimmed = attribute.trim();
+            if (trimmed.regionMatches(true, 0, "Max-Age=", 0, "Max-Age=".length())) {
+                try {
+                    return Long.parseLong(trimmed.substring("Max-Age=".length()).trim()) <= 0L;
+                } catch (NumberFormatException ignored) {
+                    return false;
+                }
+            }
+        }
+        return false;
     }
 
     private Map<String, String> parseCookieString(String cookieString) {

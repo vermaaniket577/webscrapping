@@ -65,7 +65,9 @@ public class McaCaptchaService {
                 }
                 continue;
             }
-            ValidateCaptchaRequest req = new ValidateCaptchaRequest(captcha.captcha(), captcha.preCt(), captcha.status(), cookie);
+            // Carry the cookie jar getCaptcha built forward: MCA binds the generated captcha to the
+            // cookies it set on that call, so validating with the pre-fetch jar loses that binding.
+            ValidateCaptchaRequest req = new ValidateCaptchaRequest(captcha.captcha(), captcha.preCt(), captcha.status(), captcha.cookie());
             // Prime CSRF after captcha generation because MCA can rotate cookies during the captcha call.
             req = new ValidateCaptchaRequest(req.captchaTxt(), req.preCt(), req.status(), this.primeCsrfToken(req.cookie()));
             response = this.validateCaptcha(req);
@@ -351,11 +353,11 @@ public class McaCaptchaService {
     }
 
     private boolean isCaptchaExtractionEnabled() {
-        return Boolean.parseBoolean(System.getProperty("mca.captcha.extraction.enabled", "false"));
+        return Boolean.parseBoolean(System.getProperty("mca.captcha.extraction.enabled", "true"));
     }
 
     private boolean isOcrExtractionEnabled() {
-        return Boolean.parseBoolean(System.getProperty("mca.captcha.ocr.enabled", "false"));
+        return Boolean.parseBoolean(System.getProperty("mca.captcha.ocr.enabled", "true"));
     }
 
     private boolean isCaptchaAuditEnabled() {

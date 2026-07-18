@@ -203,3 +203,4 @@ mvn spring-boot:run -Docr.tessdataPath="/path/to/tessdata" -Docr.nativeLibraryPa
 - The default database is in-memory H2.
 - Same-user login attempts are serialized to avoid MCA captcha, OTP, and session-cookie collisions.
 - Different users can still be served concurrently by Spring Boot/Tomcat.
+"# webscrapping" 
