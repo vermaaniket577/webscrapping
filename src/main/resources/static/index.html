@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCA Automation | Sign In</title>
+    <meta name="description" content="Sign in to MCA Automation API">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-header">
+            <h1>Welcome Back</h1>
+            <p>Sign in to access MCA Automation API</p>
+        </div>
+        
+        <form id="login-form">
+            <div class="input-group">
+                <label for="userName">Email or Username</label>
+                <input type="text" id="userName" name="userName" placeholder="Enter your MCA email" required autocomplete="username">
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" id="toggle-password" class="toggle-password" aria-label="Toggle password visibility">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="feedback-message" id="feedback-message" style="display: none;"></div>
+
+            <button type="submit" id="submit-btn" class="submit-btn">
+                <span class="btn-text">Sign In</span>
+                <span class="loader" style="display: none;"></span>
+            </button>
+        </form>
+        
+        <form id="otp-form" style="display: none;">
+            <div class="input-group">
+                <label for="otp">Enter OTP</label>
+                <input type="text" id="otp" name="otp" placeholder="Enter OTP" required autocomplete="off">
+            </div>
+            
+            <div class="feedback-message" id="otp-feedback-message" style="display: none;"></div>
+
+            <button type="submit" id="verify-btn" class="submit-btn">
+                <span class="btn-text">Verify OTP</span>
+                <span class="loader" style="display: none;"></span>
+            </button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <button type="button" id="resend-otp" style="background: transparent; color: rgba(255,255,255,0.7); border: none; cursor: pointer; text-decoration: underline; font-family: 'Outfit', sans-serif; font-size: 0.9rem;">Resend OTP</button>
+                <button type="button" id="back-to-login" style="background: transparent; color: rgba(255,255,255,0.7); border: none; cursor: pointer; text-decoration: underline; font-family: 'Outfit', sans-serif; font-size: 0.9rem;">Back to Login</button>
+            </div>
+        </form>
+        
+        <div class="login-footer">
+            <p>Need an account? <a href="#">Register here</a></p>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
