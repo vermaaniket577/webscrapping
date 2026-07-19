@@ -1,0 +1,7 @@
+com\mca\automate\controller\services\ApplicationStatusControllerTest.class
+com\mca\automate\service\McaCaptchaServiceTest.class
+com\mca\automate\service\MCAApplicationStatusServiceTest.class
+com\mca\automate\dto\MasterDataRequestTest.class
+com\mca\automate\service\OtpSessionStoreTest.class
+com\mca\automate\controller\services\MasterDataControllerTest.class
+com\mca\automate\util\UtilTest.class
