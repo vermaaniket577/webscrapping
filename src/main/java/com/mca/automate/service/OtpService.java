@@ -24,6 +24,10 @@ public class OtpService {
 
     @Autowired
     CookieUtil cookieUtil;
+
+    @Autowired
+    com.mca.automate.util.Util util;
+
     private final HttpClientService http;
     final String VERIFY_OTP_URL = "https://www.mca.gov.in/bin/verifyOTP";
     final String SEND_OTP_URL = "https://www.mca.gov.in/bin/sendOTP";
@@ -35,11 +39,16 @@ public class OtpService {
     }
 
     public String verifOtp(VerifyOtpDTO verifyOtpDTO) throws IOException {
-        String cookie = verifyOtpDTO.getCookie();
-        String plain = "requestType=sameOTP&EmailId=" + verifyOtpDTO.getEmail().toUpperCase() + "&mobileNo=" + verifyOtpDTO.getMobile() + "&otp=" + verifyOtpDTO.getOtp();
+        String cookie = this.util.safe(verifyOtpDTO.getCookie());
+        String mobile = this.util.safe(verifyOtpDTO.getMobile());
+        String plain = "requestType=sameOTP&EmailId=" + verifyOtpDTO.getEmail().toUpperCase() + "&mobileNo=" + mobile + "&otp=" + verifyOtpDTO.getOtp();
         System.out.println("+++++++++++++ verify otp data is " + plain);
         System.out.println("+++++++++++++ verify otp cookie is " + cookie);
-        String encrypted = this.crypto.encrypt(plain);
+        String csrf = this.util.stripNewlines(this.util.safe(this.util.getCsrf(cookie)));
+        if (csrf.isEmpty()) {
+            System.out.println("+++++++++++++ verify otp WARNING: _csrf cookie is missing, using empty csrf");
+        }
+        String encrypted = this.crypto.encrypt(plain) + "&csrfToken=" + this.crypto.encrypt(csrf) + "&csrfDecode=false";
         System.out.println("+++++++++++++ verify otp data is " + encrypted);
         RequestBody body = RequestBody.create("data=" + encrypted, FORM);
         Request req = new Request.Builder().url("https://www.mca.gov.in/bin/verifyOTP").post(body).header("accept", "*/*").header("accept-language", "en-GB,en-US;q=0.9,en;q=0.8").header("origin", "https://www.mca.gov.in").header("referer", "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html").header("sec-fetch-dest", "empty").header("sec-fetch-mode", "cors").header("sec-fetch-site", "same-origin").header("x-requested-with", "XMLHttpRequest").header("user-agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36").header("Cookie", cookie).build();
@@ -59,7 +68,8 @@ public class OtpService {
         String sendOtpPayload = "requestType=" + requestType + "&mobileNo=" + mobileNo + "&EmailId=" + emailId + "&templateType=" + template + "&countryName=India&specificType=login";
         System.out.println("+++++++++++++ send otp data is " + sendOtpPayload);
         System.out.println("+++++++++++++ send otp cookie is " + cookies);
-        String encrypted = this.crypto.encrypt(sendOtpPayload);
+        String csrf = this.util.stripNewlines(this.util.safe(this.util.getCsrf(cookies)));
+        String encrypted = this.crypto.encrypt(sendOtpPayload) + "&csrfToken=" + this.crypto.encrypt(csrf) + "&csrfDecode=false";
         System.out.println("+++++++++++++ send otp data is " + encrypted);
         RequestBody body = RequestBody.create("data=" + encrypted, FORM);
         Request req = new Request.Builder().url("https://www.mca.gov.in/bin/sendOTP").post(body).header("accept", "*/*").header("accept-language", "en-GB,en-US;q=0.9,en;q=0.8").header("origin", "https://www.mca.gov.in").header("referer", "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html").header("sec-fetch-dest", "empty").header("sec-fetch-mode", "cors").header("sec-fetch-site", "same-origin").header("x-requested-with", "XMLHttpRequest").header("user-agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36").header("Cookie", cookies).build();
