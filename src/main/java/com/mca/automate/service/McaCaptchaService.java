@@ -138,6 +138,34 @@ public class McaCaptchaService {
         }
     }
 
+    public com.mca.automate.dto.FetchCaptchaImageResponse getCaptchaImageBase64(String cookie) throws Exception {
+        log.info("Fetching captcha image base64 from URL: {}", (Object)CAPTCHA_URL);
+        try (Response response = this.http.execute(new Request.Builder().url(CAPTCHA_URL).get().header("cookie", cookie).header("accept", "*/*").header("accept-language", "en-GB,en-US;q=0.9,en;q=0.8").header("origin", "https://www.mca.gov.in").header("referer", "https://www.mca.gov.in/content/mca/global/en/foportal/fologin.html").header("sec-fetch-dest", "empty").header("sec-fetch-mode", "cors").header("sec-fetch-site", "same-origin").header("x-requested-with", "XMLHttpRequest").header("user-agent", "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36").build())) {
+            cookie = this.cookieUtil.updateCookies(cookie, response);
+            if (response.body() == null) {
+                return new com.mca.automate.dto.FetchCaptchaImageResponse("", "", false, cookie);
+            }
+            String ct = Optional.ofNullable(response.header("Content-Type")).orElse("");
+            byte[] raw = response.body().bytes();
+            if (raw.length == 0) {
+                return new com.mca.automate.dto.FetchCaptchaImageResponse("", "", false, cookie);
+            }
+            byte[] image = this.extractCaptchaImage(raw, ct);
+            if (image == null) {
+                return new com.mca.automate.dto.FetchCaptchaImageResponse("", "", false, cookie);
+            }
+            String base64Image = java.util.Base64.getEncoder().encodeToString(image);
+            String preCt = this.util.stripNewlines(this.util.safe(response.header("pre_ct")));
+            if (preCt.isEmpty()) {
+                return new com.mca.automate.dto.FetchCaptchaImageResponse("", "", false, cookie);
+            }
+            return new com.mca.automate.dto.FetchCaptchaImageResponse(base64Image, preCt, true, cookie);
+        }
+        catch (Exception ex) {
+            log.error("Failed to fetch captcha base64 -- ERROR: {}", (Object)ex.getMessage(), (Object)ex);
+            return new com.mca.automate.dto.FetchCaptchaImageResponse("", "", false, "");
+        }
+    }
     public ValidateCaptchaResponse validateCaptcha(ValidateCaptchaRequest validateCaptchaRequest) throws IOException {
         String cookie = validateCaptchaRequest.cookie();
         String captchaText = this.util.stripNewlines(this.util.safe(validateCaptchaRequest.captchaTxt()));
