@@ -19,9 +19,6 @@ server:
     accept-count: ${SERVER_TOMCAT_ACCEPT_COUNT:100}
 
 mca:
-  default:
-    username: ${MCA_DEFAULT_USERNAME:vermaaniket577@gmail.com}
-    password: ${MCA_DEFAULT_PASSWORD:Av@10203040}
   crypto:
     passText: ${MCA_CRYPTO_PASS_TEXT:d6163f0659cfe4196dc03c2c29aab06f10cb0a79cdfc74a45da2d72358712e80}
     salt: ${MCA_CRYPTO_SALT:fc74a45dsalt}
@@ -30,6 +27,6 @@ mca:
     iterations: ${MCA_CRYPTO_ITERATIONS:100}
 
 ocr:
-  tessdataPath: ${OCR_TESSDATA_PATH:C:\tesseract-5.4.0.20240606\tesseract-5.4.0.20240606\tessdata}
+  tessdataPath: ${OCR_TESSDATA_PATH:/usr/local/share/tessdata}
   language: ${OCR_LANGUAGE:eng}
   nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:}
