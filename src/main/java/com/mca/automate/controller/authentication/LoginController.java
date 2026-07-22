@@ -1,5 +1,7 @@
 package com.mca.automate.controller.authentication;
 
+import com.mca.automate.service.CredentialsConfigService;
+import com.mca.automate.service.ChromeBrowserService;
 import com.mca.automate.dto.ApiResponse;
 import com.mca.automate.dto.LoginDTO;
 import com.mca.automate.dto.LoginResponse;
@@ -24,6 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 /* JADX INFO: loaded from: LoginController.class */
 @RestController
 public class LoginController {
+
+    @Autowired
+    private CredentialsConfigService configService;
+
+    @Autowired
+    ChromeBrowserService chromeBrowserService;
 
     @Autowired
     McaCaptchaService captchaService;
@@ -56,12 +64,27 @@ public class LoginController {
 
     @PostMapping({ "/roclogin" })
     public ResponseEntity<ApiResponse> loginROCUuser(@RequestBody LoginDTO loginDTO) throws Exception {
-        LoginResponse loginResponse = this.mcaLoginService.login(loginDTO.getUserName(), loginDTO.getPassword(),
+        String userName = loginDTO.getUserName();
+        String password = loginDTO.getPassword();
+        if (userName == null || userName.isBlank()) {
+            userName = configService.getUsername();
+        }
+        if (password == null || password.isBlank()) {
+            password = configService.getPassword();
+        }
+        LoginResponse loginResponse = this.mcaLoginService.login(userName, password,
                 loginDTO.getDeviceId(), "login");
         System.out.println("Login Response is " + loginResponse.status());
         System.out.println("Login Response is " + loginResponse.status() + " cookie is " + loginResponse.cookie());
         if (false == loginResponse.status()) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, loginResponse.message(), null);
+        }
+        if (!"Otp Required".equalsIgnoreCase(loginResponse.message())) {
+            VerifyOtpDTO dto = new VerifyOtpDTO();
+            dto.setEmail(userName);
+            dto.setPassword(password);
+            dto.setDeviceId(loginDTO.getDeviceId());
+            this.chromeBrowserService.openWithCookies(loginResponse.cookie(), dto);
         }
         return ResponseUtil.build(HttpStatus.OK, loginResponse.message(), loginResponse.cookie());
     }
@@ -76,6 +99,16 @@ public class LoginController {
             return ResponseUtil.build(HttpStatus.OK, "User Registered Successfully", null);
         }
         return ResponseUtil.build(HttpStatus.BAD_REQUEST, "User Registertion Failed", null);
+    }
+
+    @GetMapping({ "/users" })
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        try {
+            java.util.List<NewUserEntity> users = this.registerUser.getAllUsers();
+            return ResponseUtil.build(HttpStatus.OK, "Users fetched successfully", users);
+        } catch (Exception e) {
+            return ResponseUtil.build(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to fetch users", null);
+        }
     }
 
 

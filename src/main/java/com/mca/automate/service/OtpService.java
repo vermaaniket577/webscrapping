@@ -59,6 +59,19 @@ public class OtpService {
             if (resp.code() != 200) {
                 return "failed";
             }
+            if (!responseBody.isBlank()) {
+                try {
+                    String decrypted = this.crypto.decrypt(responseBody);
+                    System.out.println("+++++++++++ verify otp decrypted response body is " + decrypted);
+                    if (decrypted.contains("Invalid OTP") || decrypted.contains("Valid\":\"false\"")) {
+                        return "failed";
+                    }
+                } catch (Exception e) {
+                    if (responseBody.contains("Invalid OTP") || responseBody.contains("Valid\":\"false\"")) {
+                        return "failed";
+                    }
+                }
+            }
             return cookie2;
         }
     }

@@ -97,33 +97,14 @@ public class ChromeBrowserService {
     }
 
     private String findAnyTabWsUrl() {
-        String url = "http://127.0.0.1:" + CDP_PORT + "/json";
+        String url = "http://127.0.0.1:" + CDP_PORT + "/json/new";
         try {
             Request req = new Request.Builder().url(url).get().build();
             try (Response resp = httpClient.newCall(req).execute()) {
                 if (!resp.isSuccessful() || resp.body() == null) return null;
-
-                JsonNode nodes = mapper.readTree(resp.body().string());
-                if (!nodes.isArray()) return null;
-
-                String localhostWs = null;
-                String anyPageWs = null;
-
-                for (JsonNode node : nodes) {
-                    if (!"page".equals(node.path("type").asText())) continue;
-                    String pageUrl = node.path("url").asText("");
-                    String ws = node.path("webSocketDebuggerUrl").asText("");
-
-                    if (pageUrl.contains("localhost:8082") || pageUrl.contains("127.0.0.1:8082")) {
-                        localhostWs = ws;
-                        break; 
-                    }
-                    if (anyPageWs == null && !ws.isBlank()) {
-                        anyPageWs = ws;
-                    }
-                }
-
-                return localhostWs != null ? localhostWs : anyPageWs;
+                JsonNode node = mapper.readTree(resp.body().string());
+                String ws = node.path("webSocketDebuggerUrl").asText("");
+                return ws.isBlank() ? null : ws;
             }
         } catch (Exception e) {
             log.debug("CDP endpoint not available: {}", e.getMessage());
@@ -144,12 +125,15 @@ public class ChromeBrowserService {
             log.info("Using Chrome profile dir: {}", tempDir);
 
             ProcessBuilder pb = new ProcessBuilder(
-                    chromePath,
+                    "cmd.exe", "/c", "start", "\"\"",
+                    "\"" + chromePath + "\"",
                     "--remote-debugging-port=" + CDP_PORT,
                     "--user-data-dir=" + tempDir,
                     "--no-first-run",
                     "--no-default-browser-check",
                     "--disable-extensions",
+                    "--start-maximized",
+                    "--new-window",
                     "about:blank"
             );
             pb.redirectErrorStream(true);
@@ -224,6 +208,70 @@ public class ChromeBrowserService {
             int confirmedCookies = 0;
             boolean navigationSent = false;
 
+            private synchronized void sendNavigation(WebSocket webSocket) {
+                if (navigationSent) return;
+                navigationSent = true;
+                log.info("✓ Navigating to MCA with session...");
+
+                ObjectNode navCmd = mapper.createObjectNode();
+                navCmd.put("id", msgId++);
+                navCmd.put("method", "Page.navigate");
+                ObjectNode navParams = mapper.createObjectNode();
+                navParams.put("url", MCA_HOME_URL);
+                navCmd.set("params", navParams);
+                webSocket.send(navCmd.toString());
+
+                ObjectNode bringCmd = mapper.createObjectNode();
+                bringCmd.put("id", msgId++);
+                bringCmd.put("method", "Page.bringToFront");
+                webSocket.send(bringCmd.toString());
+
+                try { Thread.sleep(2500); } catch (InterruptedException ignored) {}
+
+                // Aggressively force Chrome to the foreground natively using a PowerShell COM object
+                try {
+                    String chromeBin = resolveChromePath();
+                    if (chromeBin != null) {
+                        String psCode = "$wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('MCA'); $wshell.AppActivate('Chrome');";
+                        Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", psCode});
+                        
+                        log.info("✓ Executed native focus stealing commands.");
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to bring window to front natively: {}", e.getMessage());
+                }
+
+                String safeSessionId = escape(cookieMap.getOrDefault("sessionID", ""));
+                String safeSessionMd5 = escape(cookieMap.getOrDefault("session-token-md5", ""));
+                String safeDeviceId = escape(deviceId);
+
+                String js = String.format(
+                        "try { " +
+                        "  localStorage.setItem('sessionID', '%s'); " +
+                        "  localStorage.setItem('session-token-md5', '%s'); " +
+                        "  localStorage.setItem('deviceId', '%s'); " +
+                        "  sessionStorage.setItem('sessionID', '%s'); " +
+                        "  sessionStorage.setItem('session-token-md5', '%s'); " +
+                        "  sessionStorage.setItem('deviceId', '%s'); " +
+                        "  'OK'; " +
+                        "} catch(e) { e.message; }",
+                        safeSessionId, safeSessionMd5, safeDeviceId,
+                        safeSessionId, safeSessionMd5, safeDeviceId
+                );
+
+                ObjectNode evalParams = mapper.createObjectNode();
+                evalParams.put("expression", js);
+                ObjectNode evalCmd = mapper.createObjectNode();
+                evalCmd.put("id", msgId++);
+                evalCmd.put("method", "Runtime.evaluate");
+                evalCmd.set("params", evalParams);
+                webSocket.send(evalCmd.toString());
+
+                log.info("✓ MCA page navigated with cookies. localStorage injected.");
+                success[0] = true;
+                latch.countDown();
+            }
+
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 log.info("CDP WebSocket connected. Injecting {} cookies BEFORE loading MCA...", cookieMap.size());
@@ -255,61 +303,34 @@ public class ChromeBrowserService {
                 }
 
                 log.info("All {} cookies sent. Waiting for confirmations before navigating...", pendingCookies);
+
+                // Fallback Navigation Timer (3.5 seconds)
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(3500);
+                        if (!navigationSent) {
+                            log.warn("Cookie confirmations delayed. Triggering fallback navigation...");
+                            sendNavigation(webSocket);
+                        }
+                    } catch (InterruptedException ignored) {}
+                }).start();
             }
 
             @Override
             public void onMessage(WebSocket webSocket, String text) {
                 try {
                     JsonNode msg = mapper.readTree(text);
-                    if (msg.has("result") && msg.path("result").has("success")) {
-                        boolean cookieSet = msg.path("result").path("success").asBoolean(false);
-                        if (cookieSet) confirmedCookies++;
-                        log.debug("Cookie confirmation {}/{}", confirmedCookies, pendingCookies);
+                    if (msg.has("id")) {
+                        int id = msg.path("id").asInt();
+                        // If it's a response to one of the Network.setCookie commands (sent after Network.enable)
+                        if (id >= 2 && id <= pendingCookies + 1) {
+                            confirmedCookies++;
+                            log.info("Cookie confirmation received {}/{}", confirmedCookies, pendingCookies);
+                        }
                     }
 
-                    if (confirmedCookies >= pendingCookies && pendingCookies > 0 && !navigationSent) {
-                        navigationSent = true;
-                        log.info("✓ All {} cookies confirmed. NOW navigating to MCA with session...", confirmedCookies);
-
-                        ObjectNode navCmd = mapper.createObjectNode();
-                        navCmd.put("id", msgId++);
-                        navCmd.put("method", "Page.navigate");
-                        ObjectNode navParams = mapper.createObjectNode();
-                        navParams.put("url", MCA_HOME_URL);
-                        navCmd.set("params", navParams);
-                        webSocket.send(navCmd.toString());
-
-                        try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
-
-                        String safeSessionId = escape(cookieMap.getOrDefault("sessionID", ""));
-                        String safeSessionMd5 = escape(cookieMap.getOrDefault("session-token-md5", ""));
-                        String safeDeviceId = escape(deviceId);
-
-                        String js = String.format(
-                                "try { " +
-                                "  localStorage.setItem('sessionID', '%s'); " +
-                                "  localStorage.setItem('session-token-md5', '%s'); " +
-                                "  localStorage.setItem('deviceId', '%s'); " +
-                                "  sessionStorage.setItem('sessionID', '%s'); " +
-                                "  sessionStorage.setItem('session-token-md5', '%s'); " +
-                                "  sessionStorage.setItem('deviceId', '%s'); " +
-                                "  'OK'; " +
-                                "} catch(e) { e.message; }",
-                                safeSessionId, safeSessionMd5, safeDeviceId,
-                                safeSessionId, safeSessionMd5, safeDeviceId
-                        );
-
-                        ObjectNode evalParams = mapper.createObjectNode();
-                        evalParams.put("expression", js);
-                        ObjectNode evalCmd = mapper.createObjectNode();
-                        evalCmd.put("id", msgId++);
-                        evalCmd.put("method", "Runtime.evaluate");
-                        evalCmd.set("params", evalParams);
-                        webSocket.send(evalCmd.toString());
-
-                        log.info("✓ MCA page navigated with cookies. localStorage injected.");
-                        success[0] = true;
-                        latch.countDown();
+                    if (confirmedCookies >= pendingCookies && pendingCookies > 0) {
+                        sendNavigation(webSocket);
                     }
                 } catch (Exception e) {
                     log.debug("CDP message parse error: {}", e.getMessage());
