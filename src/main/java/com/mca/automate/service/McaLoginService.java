@@ -324,7 +324,12 @@ public class McaLoginService {
             if (!responseBody.isBlank()) {
                 if (response.code() == 200) {
                     try {
-                        System.out.println("+++++ verify otp login decrypted response body is " + this.crypto.decrypt(responseBody));
+                        String decrypted = this.crypto.decrypt(responseBody);
+                        System.out.println("+++++ verify otp login decrypted response body is " + decrypted);
+                        if (decrypted.contains("OTP is already validated")) {
+                            System.out.println("+++++ returning OTP_ALREADY_VALIDATED");
+                            return "OTP_ALREADY_VALIDATED";
+                        }
                     }
                     catch (Exception decryptEx) {
                         System.out.println("+++++ verify otp login raw response body is " + responseBody);

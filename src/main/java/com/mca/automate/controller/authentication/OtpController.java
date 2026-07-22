@@ -76,6 +76,9 @@ public class OtpController {
         // MCA OTP validation is only the first step; this follow-up login exchanges it
         // for session cookies.
         String finalCookie = this.mcaLoginService.verifiedOTPLogin(verifyOtpDTO);
+        if ("OTP_ALREADY_VALIDATED".equals(finalCookie)) {
+            return ResponseUtil.build(HttpStatus.BAD_REQUEST, "OTP is already validated.", cookie);
+        }
         if (finalCookie == null || finalCookie.isBlank() || "false".equalsIgnoreCase(finalCookie)) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp Verified but post-OTP login failed", cookie);
         }
@@ -98,6 +101,9 @@ public class OtpController {
         // MCA OTP validation is only the first step; this follow-up login exchanges it
         // for session cookies.
         String finalCookie = this.mcaLoginService.verifiedOTPLogin(verifyOtpDTO);
+        if ("OTP_ALREADY_VALIDATED".equals(finalCookie)) {
+            return ResponseUtil.build(HttpStatus.BAD_REQUEST, "OTP is already validated.", cookie);
+        }
         if (finalCookie == null || finalCookie.isBlank() || "false".equalsIgnoreCase(finalCookie)) {
             return ResponseUtil.build(HttpStatus.BAD_REQUEST, "Otp Verified but post-OTP login failed", cookie);
         }
