@@ -136,7 +136,7 @@ public class McaLoginService {
                             String forceSblUserId = this.util.getJsonField(forceLoginRaw, "sblUserId");
                             String forceOtpCookie = this.otpService.sendOtp(forceMobile, forceEmail, forceLoginCookie, "sameOTP", "User_Login");
                             this.otpSessionStore.remember(forceOtpCookie, forceSblUserId);
-                            this.otpSessionStore.rememberClient(username, deviceId, forceOtpCookie, forceSblUserId);
+                            this.otpSessionStore.rememberClient(username, deviceId, forceOtpCookie, forceSblUserId, password);
                             return new LoginResponse(forceOtpCookie, "Otp Required", true);
                         }
                         if (!"200".equalsIgnoreCase(forceLoginResCode)) {
@@ -175,7 +175,7 @@ public class McaLoginService {
                     }
                     this.otpSessionStore.remember(newCookie3, sblUserId);
                     // Also stash the cookie by email+deviceId so /verifyotpp can recover it without the client pasting it back.
-                    this.otpSessionStore.rememberClient(username, deviceId, newCookie3, sblUserId);
+                    this.otpSessionStore.rememberClient(username, deviceId, newCookie3, sblUserId, password);
                     return new LoginResponse(newCookie3, "Otp Required", true);
                 }
                 if (!"200".equalsIgnoreCase(resCode)) {

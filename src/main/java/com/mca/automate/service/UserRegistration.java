@@ -21,4 +21,8 @@ public class UserRegistration {
             return v0.getDeviceId();
         }).orElse(null);
     }
+
+    public java.util.List<NewUserEntity> getAllUsers() {
+        return this.userRegistrationRepository.findAll();
+    }
 }
