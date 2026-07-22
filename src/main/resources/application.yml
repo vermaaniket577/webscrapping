@@ -12,6 +12,7 @@ spring:
     open-in-view: false
 
 server:
+  port: 8081
   tomcat:
     threads:
       max: ${SERVER_TOMCAT_THREADS_MAX:100}
@@ -27,6 +28,22 @@ mca:
     iterations: ${MCA_CRYPTO_ITERATIONS:100}
 
 ocr:
-  tessdataPath: ${OCR_TESSDATA_PATH:/usr/local/share/tessdata}
+  #tessdataPath: ${OCR_TESSDATA_PATH:/usr/local/share/tessdata}
+  tessdataPath: ${OCR_TESSDATA_PATH:C:\tesseract-5.4.0.20240606\tesseract-5.4.0.20240606\tessdata}
+
   language: ${OCR_LANGUAGE:eng}
   nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:}
+
+browser-login:
+  target-url: ${BROWSER_LOGIN_URL:https://example.com/login}
+  dashboard-url-contains: ${BROWSER_DASHBOARD_PATTERN:dashboard}
+  headless: ${BROWSER_HEADLESS:true}
+  timeout-seconds: ${BROWSER_TIMEOUT:15}
+  selectors:
+    pan-input: ${SELECTOR_PAN:#pan}
+    continue-button: ${SELECTOR_CONTINUE:#continue}
+    password-input: ${SELECTOR_PASSWORD:#password}
+    confirm-checkbox: ${SELECTOR_CONFIRM:#confirm}
+    continue-button-2: ${SELECTOR_CONTINUE2:#continue}
+    password-page-url-contains: ${PASSWORD_PAGE_PATTERN:password}
+
