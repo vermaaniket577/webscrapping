@@ -144,16 +144,23 @@ public class ChromeBrowserService {
     private String launchChromeWithDebugging() {
         String chromePath = resolveChromePath();
         if (chromePath == null) {
-            log.error("Could not find Chrome binary. Set 'chrome.binary.path' in application.yml.");
+            log.error("Could not find Chrome/Edge binary. Set 'chrome.binary.path' in application.yml.");
             return null;
         }
 
         try {
-            String tempDir = System.getProperty("java.io.tmpdir") + "mca-chrome-profile";
-            new java.io.File(tempDir).mkdirs();
-            log.info("Using Chrome profile dir: {}", tempDir);
-
+            // Use the user's DEFAULT browser profile so that if the browser is already
+            // running, it opens a NEW TAB in the existing window instead of a new window.
             boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            String userDataDir = resolveDefaultProfileDir(chromePath, isWindows);
+            
+            if (userDataDir == null) {
+                // Fallback to a temp profile if we can't find the default one
+                userDataDir = System.getProperty("java.io.tmpdir") + "mca-chrome-profile";
+            }
+            new java.io.File(userDataDir).mkdirs();
+            log.info("Using browser profile dir: {}", userDataDir);
+
             ProcessBuilder pb;
             
             if (isWindows) {
@@ -161,12 +168,11 @@ public class ChromeBrowserService {
                         "cmd.exe", "/c", "start", "\"\"",
                         "\"" + chromePath + "\"",
                         "--remote-debugging-port=" + CDP_PORT,
-                        "--user-data-dir=" + tempDir,
+                        "--user-data-dir=" + userDataDir,
                         "--no-first-run",
                         "--no-default-browser-check",
                         "--disable-extensions",
                         "--start-maximized",
-                        "--new-window",
                         "about:blank"
                 );
             } else {
@@ -174,25 +180,56 @@ public class ChromeBrowserService {
                 pb = new ProcessBuilder(
                         chromePath,
                         "--remote-debugging-port=" + CDP_PORT,
-                        "--user-data-dir=" + tempDir,
+                        "--user-data-dir=" + userDataDir,
                         "--no-first-run",
                         "--no-default-browser-check",
                         "--disable-extensions",
-                        "--no-sandbox",           // Required for many Linux environments (like AWS)
-                        "--disable-dev-shm-usage", // Helps prevent crashes in Linux
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
                         "about:blank"
                 );
             }
             
             pb.redirectErrorStream(true);
             pb.start();
-            log.info("Browser process launched with dedicated profile: {}", chromePath);
+            log.info("Browser process launched with user profile: {}", chromePath);
 
             return waitForCdpReady(10);
         } catch (Exception e) {
             log.error("Failed to launch Browser: {}", e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Resolves the user's default browser profile directory based on the browser binary path.
+     * Using the default profile ensures that if the browser is already open,
+     * it will open a new tab in the existing window rather than a separate window.
+     */
+    private String resolveDefaultProfileDir(String browserPath, boolean isWindows) {
+        String userHome = System.getProperty("user.home");
+        
+        if (isWindows) {
+            String lowerPath = browserPath.toLowerCase();
+            if (lowerPath.contains("chrome")) {
+                return userHome + "\\AppData\\Local\\Google\\Chrome\\User Data";
+            } else if (lowerPath.contains("msedge") || lowerPath.contains("edge")) {
+                return userHome + "\\AppData\\Local\\Microsoft\\Edge\\User Data";
+            } else if (lowerPath.contains("brave")) {
+                return userHome + "\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data";
+            }
+        } else {
+            // Linux
+            String lowerPath = browserPath.toLowerCase();
+            if (lowerPath.contains("chrome")) {
+                return userHome + "/.config/google-chrome";
+            } else if (lowerPath.contains("chromium")) {
+                return userHome + "/.config/chromium";
+            } else if (lowerPath.contains("brave")) {
+                return userHome + "/.config/BraveSoftware/Brave-Browser";
+            }
+        }
+        return null;
     }
 
     private String resolveChromePath() {
