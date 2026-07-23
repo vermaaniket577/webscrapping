@@ -153,25 +153,44 @@ public class ChromeBrowserService {
             new java.io.File(tempDir).mkdirs();
             log.info("Using Chrome profile dir: {}", tempDir);
 
-            ProcessBuilder pb = new ProcessBuilder(
-                    "cmd.exe", "/c", "start", "\"\"",
-                    "\"" + chromePath + "\"",
-                    "--remote-debugging-port=" + CDP_PORT,
-                    "--user-data-dir=" + tempDir,
-                    "--no-first-run",
-                    "--no-default-browser-check",
-                    "--disable-extensions",
-                    "--start-maximized",
-                    "--new-window",
-                    "about:blank"
-            );
+            boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            ProcessBuilder pb;
+            
+            if (isWindows) {
+                pb = new ProcessBuilder(
+                        "cmd.exe", "/c", "start", "\"\"",
+                        "\"" + chromePath + "\"",
+                        "--remote-debugging-port=" + CDP_PORT,
+                        "--user-data-dir=" + tempDir,
+                        "--no-first-run",
+                        "--no-default-browser-check",
+                        "--disable-extensions",
+                        "--start-maximized",
+                        "--new-window",
+                        "about:blank"
+                );
+            } else {
+                // Linux/AWS launch command
+                pb = new ProcessBuilder(
+                        chromePath,
+                        "--remote-debugging-port=" + CDP_PORT,
+                        "--user-data-dir=" + tempDir,
+                        "--no-first-run",
+                        "--no-default-browser-check",
+                        "--disable-extensions",
+                        "--no-sandbox",           // Required for many Linux environments (like AWS)
+                        "--disable-dev-shm-usage", // Helps prevent crashes in Linux
+                        "about:blank"
+                );
+            }
+            
             pb.redirectErrorStream(true);
             pb.start();
-            log.info("Chrome process launched with dedicated profile: {}", chromePath);
+            log.info("Browser process launched with dedicated profile: {}", chromePath);
 
             return waitForCdpReady(10);
         } catch (Exception e) {
-            log.error("Failed to launch Chrome: {}", e.getMessage());
+            log.error("Failed to launch Browser: {}", e.getMessage());
             return null;
         }
     }
@@ -182,17 +201,31 @@ public class ChromeBrowserService {
             if (f.exists()) return chromeBinaryPath;
         }
 
-        // Try Chrome, Edge, and Brave — any Chromium-based browser supports CDP
-        String[] candidates = {
-                System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe",
-                System.getenv("ProgramFiles(x86)") + "\\Google\\Chrome\\Application\\chrome.exe",
-                System.getProperty("user.home") + "\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
-                System.getenv("ProgramFiles") + "\\Microsoft\\Edge\\Application\\msedge.exe",
-                System.getenv("ProgramFiles(x86)") + "\\Microsoft\\Edge\\Application\\msedge.exe",
-                System.getProperty("user.home") + "\\AppData\\Local\\Microsoft\\Edge\\Application\\msedge.exe",
-                System.getenv("ProgramFiles") + "\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
-                System.getProperty("user.home") + "\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
-        };
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        
+        List<String> candidates = new ArrayList<>();
+        if (isWindows) {
+            candidates.addAll(Arrays.asList(
+                    System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe",
+                    System.getenv("ProgramFiles(x86)") + "\\Google\\Chrome\\Application\\chrome.exe",
+                    System.getProperty("user.home") + "\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
+                    System.getenv("ProgramFiles") + "\\Microsoft\\Edge\\Application\\msedge.exe",
+                    System.getenv("ProgramFiles(x86)") + "\\Microsoft\\Edge\\Application\\msedge.exe",
+                    System.getProperty("user.home") + "\\AppData\\Local\\Microsoft\\Edge\\Application\\msedge.exe",
+                    System.getenv("ProgramFiles") + "\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+                    System.getProperty("user.home") + "\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+            ));
+        } else {
+            // Linux/AWS Candidates
+            candidates.addAll(Arrays.asList(
+                    "/usr/bin/google-chrome",
+                    "/usr/bin/google-chrome-stable",
+                    "/usr/bin/chromium",
+                    "/usr/bin/chromium-browser",
+                    "/usr/bin/brave-browser"
+            ));
+        }
+
         for (String path : candidates) {
             if (path != null && new File(path).exists()) {
                 log.info("Resolved browser binary at: {}", path);
@@ -266,12 +299,14 @@ public class ChromeBrowserService {
 
                 // Aggressively force Chrome to the foreground natively using a PowerShell COM object
                 try {
-                    String chromeBin = resolveChromePath();
-                    if (chromeBin != null) {
-                        String psCode = "$wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('MCA'); $wshell.AppActivate('Chrome');";
-                        Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", psCode});
-                        
-                        log.info("✓ Executed native focus stealing commands.");
+                    boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+                    if (isWindows) {
+                        String chromeBin = resolveChromePath();
+                        if (chromeBin != null) {
+                            String psCode = "$wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('MCA'); $wshell.AppActivate('Chrome');";
+                            Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", psCode});
+                            log.info("✓ Executed native focus stealing commands for Windows.");
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Failed to bring window to front natively: {}", e.getMessage());
