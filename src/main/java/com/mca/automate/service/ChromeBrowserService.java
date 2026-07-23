@@ -359,8 +359,14 @@ public class ChromeBrowserService {
                     if (isWindows) {
                         String chromeBin = resolveChromePath();
                         if (chromeBin != null) {
-                            String psCode = "$wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('MCA'); $wshell.AppActivate('Chrome');";
-                            Runtime.getRuntime().exec(new String[]{"powershell.exe", "-Command", psCode});
+                            String psCode = "$wshell = New-Object -ComObject wscript.shell; " +
+                                            "Start-Sleep -Milliseconds 500; " +
+                                            "$wshell.AppActivate('MCA'); " +
+                                            "$wshell.AppActivate('Google Chrome'); " +
+                                            "Get-Process chrome, msedge, brave -ErrorAction SilentlyContinue | " +
+                                            "Where-Object {$_.MainWindowHandle -ne 0} | " +
+                                            "ForEach-Object { $wshell.AppActivate($_.Id) }";
+                            Runtime.getRuntime().exec(new String[]{"powershell.exe", "-WindowStyle", "Hidden", "-Command", psCode});
                             log.info("✓ Executed native focus stealing commands for Windows.");
                         }
                     }
