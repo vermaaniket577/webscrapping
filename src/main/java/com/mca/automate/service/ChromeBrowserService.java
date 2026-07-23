@@ -149,17 +149,12 @@ public class ChromeBrowserService {
         }
 
         try {
-            // Use the user's DEFAULT browser profile so that if the browser is already
-            // running, it opens a NEW TAB in the existing window instead of a new window.
+            // Use a dedicated automation profile. If we use the default profile while Chrome
+            // is already running, it ignores the debugging port flag and CDP fails to start.
             boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
-            String userDataDir = resolveDefaultProfileDir(chromePath, isWindows);
-            
-            if (userDataDir == null) {
-                // Fallback to a temp profile if we can't find the default one
-                userDataDir = System.getProperty("java.io.tmpdir") + "mca-chrome-profile";
-            }
+            String userDataDir = System.getProperty("java.io.tmpdir") + "mca-chrome-profile";
             new java.io.File(userDataDir).mkdirs();
-            log.info("Using browser profile dir: {}", userDataDir);
+            log.info("Using dedicated browser profile dir: {}", userDataDir);
 
             ProcessBuilder pb;
             
@@ -319,6 +314,32 @@ public class ChromeBrowserService {
                 navigationSent = true;
                 log.info("✓ Navigating to MCA with session...");
 
+                String safeSessionId = escape(cookieMap.getOrDefault("sessionID", ""));
+                String safeSessionMd5 = escape(cookieMap.getOrDefault("session-token-md5", ""));
+                String safeDeviceId = escape(deviceId);
+
+                String js = String.format(
+                        "try { " +
+                        "  localStorage.setItem('sessionID', '%s'); " +
+                        "  localStorage.setItem('session-token-md5', '%s'); " +
+                        "  localStorage.setItem('deviceId', '%s'); " +
+                        "  sessionStorage.setItem('sessionID', '%s'); " +
+                        "  sessionStorage.setItem('session-token-md5', '%s'); " +
+                        "  sessionStorage.setItem('deviceId', '%s'); " +
+                        "} catch(e) { }",
+                        safeSessionId, safeSessionMd5, safeDeviceId,
+                        safeSessionId, safeSessionMd5, safeDeviceId
+                );
+
+                // Add script to run before page load to guarantee origin is correct
+                ObjectNode scriptCmd = mapper.createObjectNode();
+                scriptCmd.put("id", msgId++);
+                scriptCmd.put("method", "Page.addScriptToEvaluateOnNewDocument");
+                ObjectNode scriptParams = mapper.createObjectNode();
+                scriptParams.put("source", js);
+                scriptCmd.set("params", scriptParams);
+                webSocket.send(scriptCmd.toString());
+
                 ObjectNode navCmd = mapper.createObjectNode();
                 navCmd.put("id", msgId++);
                 navCmd.put("method", "Page.navigate");
@@ -331,8 +352,6 @@ public class ChromeBrowserService {
                 bringCmd.put("id", msgId++);
                 bringCmd.put("method", "Page.bringToFront");
                 webSocket.send(bringCmd.toString());
-
-                try { Thread.sleep(2500); } catch (InterruptedException ignored) {}
 
                 // Aggressively force Chrome to the foreground natively using a PowerShell COM object
                 try {
@@ -349,33 +368,7 @@ public class ChromeBrowserService {
                     log.error("Failed to bring window to front natively: {}", e.getMessage());
                 }
 
-                String safeSessionId = escape(cookieMap.getOrDefault("sessionID", ""));
-                String safeSessionMd5 = escape(cookieMap.getOrDefault("session-token-md5", ""));
-                String safeDeviceId = escape(deviceId);
-
-                String js = String.format(
-                        "try { " +
-                        "  localStorage.setItem('sessionID', '%s'); " +
-                        "  localStorage.setItem('session-token-md5', '%s'); " +
-                        "  localStorage.setItem('deviceId', '%s'); " +
-                        "  sessionStorage.setItem('sessionID', '%s'); " +
-                        "  sessionStorage.setItem('session-token-md5', '%s'); " +
-                        "  sessionStorage.setItem('deviceId', '%s'); " +
-                        "  'OK'; " +
-                        "} catch(e) { e.message; }",
-                        safeSessionId, safeSessionMd5, safeDeviceId,
-                        safeSessionId, safeSessionMd5, safeDeviceId
-                );
-
-                ObjectNode evalParams = mapper.createObjectNode();
-                evalParams.put("expression", js);
-                ObjectNode evalCmd = mapper.createObjectNode();
-                evalCmd.put("id", msgId++);
-                evalCmd.put("method", "Runtime.evaluate");
-                evalCmd.set("params", evalParams);
-                webSocket.send(evalCmd.toString());
-
-                log.info("✓ MCA page navigated with cookies. localStorage injected.");
+                log.info("✓ MCA page navigated with cookies. localStorage script injected.");
                 success[0] = true;
                 latch.countDown();
             }
@@ -388,6 +381,11 @@ public class ChromeBrowserService {
                 enableNetwork.put("id", msgId++);
                 enableNetwork.put("method", "Network.enable");
                 webSocket.send(enableNetwork.toString());
+
+                ObjectNode enablePage = mapper.createObjectNode();
+                enablePage.put("id", msgId++);
+                enablePage.put("method", "Page.enable");
+                webSocket.send(enablePage.toString());
 
                 for (Map.Entry<String, String> entry : cookieMap.entrySet()) {
                     ObjectNode params = mapper.createObjectNode();
