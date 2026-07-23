@@ -57,4 +57,4 @@ ocr:
 
 chrome:
   binary:
-    path: /usr/bin/google-chrome
+    path: ${CHROME_BINARY_PATH:/usr/bin/google-chrome}
