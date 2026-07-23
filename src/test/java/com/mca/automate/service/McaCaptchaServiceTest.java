@@ -59,7 +59,9 @@ class McaCaptchaServiceTest {
 
         String previousAuditDir = System.getProperty("mca.captcha.audit.dir");
         String previousAuditEnabled = System.getProperty("mca.captcha.audit.enabled");
+        String previousExtractionEnabled = System.getProperty("mca.captcha.extraction.enabled");
         System.setProperty("mca.captcha.audit.dir", auditDir.toString());
+        System.setProperty("mca.captcha.extraction.enabled", "false");
         try {
             FetchCaptchaResponse result = service.getCaptcha("initial-cookie", false);
 
@@ -73,6 +75,7 @@ class McaCaptchaServiceTest {
         finally {
             restoreProperty("mca.captcha.audit.dir", previousAuditDir);
             restoreProperty("mca.captcha.audit.enabled", previousAuditEnabled);
+            restoreProperty("mca.captcha.extraction.enabled", previousExtractionEnabled);
         }
     }
 
@@ -99,8 +102,10 @@ class McaCaptchaServiceTest {
 
         String previousAuditDir = System.getProperty("mca.captcha.audit.dir");
         String previousAuditEnabled = System.getProperty("mca.captcha.audit.enabled");
+        String previousExtractionEnabled = System.getProperty("mca.captcha.extraction.enabled");
         System.setProperty("mca.captcha.audit.dir", auditDir.toString());
         System.setProperty("mca.captcha.audit.enabled", "true");
+        System.setProperty("mca.captcha.extraction.enabled", "false");
         try {
             FetchCaptchaResponse result = service.getCaptcha("initial-cookie", false);
 
@@ -114,6 +119,7 @@ class McaCaptchaServiceTest {
         finally {
             restoreProperty("mca.captcha.audit.dir", previousAuditDir);
             restoreProperty("mca.captcha.audit.enabled", previousAuditEnabled);
+            restoreProperty("mca.captcha.extraction.enabled", previousExtractionEnabled);
         }
     }
 
@@ -141,8 +147,10 @@ class McaCaptchaServiceTest {
 
         String previousAuditDir = System.getProperty("mca.captcha.audit.dir");
         String previousExtractionEnabled = System.getProperty("mca.captcha.extraction.enabled");
+        String previousOcrEnabled = System.getProperty("mca.captcha.ocr.enabled");
         System.setProperty("mca.captcha.audit.dir", auditDir.toString());
         System.setProperty("mca.captcha.extraction.enabled", "true");
+        System.setProperty("mca.captcha.ocr.enabled", "false");
         try {
             FetchCaptchaResponse result = service.getCaptcha("initial-cookie", false);
 
@@ -154,6 +162,7 @@ class McaCaptchaServiceTest {
         finally {
             restoreProperty("mca.captcha.audit.dir", previousAuditDir);
             restoreProperty("mca.captcha.extraction.enabled", previousExtractionEnabled);
+            restoreProperty("mca.captcha.ocr.enabled", previousOcrEnabled);
         }
     }
 
