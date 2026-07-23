@@ -49,18 +49,18 @@ class MasterDataControllerTest {
     @Test
     void suppliedVerifiedCookieFetchesMasterDataWithoutLoginOrLogout() throws Exception {
         MasterDataRequest request = masterDataRequest();
-        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Ab12Cd", "pre-ct", "verified-cookie-updated", true);
-        when(captchaService.captchaValidatonWrapper("verified-cookie")).thenReturn(captcha);
-        when(searchService.search(eq(request), eq(new LoginResponse("verified-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
+        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Ab12Cd", "pre-ct", "sessionID=a; session-token-md5=b; verified-cookie-updated", true);
+        when(captchaService.captchaValidatonWrapper("sessionID=a; session-token-md5=b; verified-cookie")).thenReturn(captcha);
+        when(searchService.search(eq(request), eq(new LoginResponse("sessionID=a; session-token-md5=b; verified-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\"}]}}");
         when(searchService.searchMasterData(
                 eq("L74909DL2008PLC180850"),
-                eq(new LoginResponse("verified-cookie-updated", "Authenticated Cookie", true)),
+                eq(new LoginResponse("sessionID=a; session-token-md5=b; verified-cookie-updated", "Authenticated Cookie", true)),
                 eq("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\"}]}}"),
                 eq("cin")))
                 .thenReturn("{\"companyData\":{\"CIN\":\"L74909DL2008PLC180850\"}}");
 
-        ResponseEntity<?> response = controller.fetchMasterData(request, "verified-cookie\n");
+        ResponseEntity<?> response = controller.fetchMasterData(request, "sessionID=a; session-token-md5=b; verified-cookie\n");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("{\"companyData\":{\"CIN\":\"L74909DL2008PLC180850\"}}");
@@ -110,12 +110,12 @@ class MasterDataControllerTest {
     @Test
     void suppliedVerifiedCookieFetchesNameSearchWithoutLoginOrLogout() throws Exception {
         MasterDataRequest request = masterDataRequest();
-        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Gh56Ij", "pre-ct-name", "name-cookie-updated", true);
-        when(captchaService.captchaValidatonWrapper("name-cookie")).thenReturn(captcha);
-        when(searchService.search(eq(request), eq(new LoginResponse("name-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
+        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Gh56Ij", "pre-ct-name", "sessionID=a; session-token-md5=b; name-cookie-updated", true);
+        when(captchaService.captchaValidatonWrapper("sessionID=a; session-token-md5=b; name-cookie")).thenReturn(captcha);
+        when(searchService.search(eq(request), eq(new LoginResponse("sessionID=a; session-token-md5=b; name-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\",\"cmpnyNm\":\"TEST COMPANY\"}]}}");
 
-        ResponseEntity<?> response = controller.fetchMasterDataWithName(request, "name-cookie\n");
+        ResponseEntity<?> response = controller.fetchMasterDataWithName(request, "sessionID=a; session-token-md5=b; name-cookie\n");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\",\"cmpnyNm\":\"TEST COMPANY\"}]}}");
@@ -159,12 +159,12 @@ class MasterDataControllerTest {
     @Test
     void suppliedVerifiedCookieChecksCompanyNameWithoutLoginOrLogout() throws Exception {
         MasterDataRequest request = masterDataRequest();
-        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Op12Qr", "pre-ct-check", "check-cookie-updated", true);
-        when(captchaService.captchaValidatonWrapper("check-cookie")).thenReturn(captcha);
-        when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("check-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
+        ValidateCaptchaResponse captcha = new ValidateCaptchaResponse("Op12Qr", "pre-ct-check", "sessionID=a; session-token-md5=b; check-cookie-updated", true);
+        when(captchaService.captchaValidatonWrapper("sessionID=a; session-token-md5=b; check-cookie")).thenReturn(captcha);
+        when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("sessionID=a; session-token-md5=b; check-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
 
-        ResponseEntity<?> response = controller.checkCompayName(request, "check-cookie\n");
+        ResponseEntity<?> response = controller.checkCompayName(request, "sessionID=a; session-token-md5=b; check-cookie\n");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
@@ -210,12 +210,12 @@ class MasterDataControllerTest {
         DirectorDataRequest request = directorDataRequest();
         when(searchService.searchMasterData(
                 eq("user@example.com"),
-                eq(new LoginResponse("director-cookie", "Authenticated Cookie", true)),
+                eq(new LoginResponse("sessionID=a; session-token-md5=b; director-cookie", "Authenticated Cookie", true)),
                 eq("01234567"),
                 eq("din")))
                 .thenReturn("director-response");
 
-        ResponseEntity<?> response = controller.fetchDirData(request, "director-cookie\n");
+        ResponseEntity<?> response = controller.fetchDirData(request, "sessionID=a; session-token-md5=b; director-cookie\n");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("director-response");
