@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form No. DIR-12 | Ministry of Corporate Affairs</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===================== Top MCA bar ===================== -->
+  <header class="mca-topbar">
+    <div class="mca-topbar__inner">
+      <div class="mca-brand">
+        <div class="mca-emblem" aria-hidden="true">
+          <!-- Ashoka emblem (simplified) -->
+          <svg viewBox="0 0 48 48" width="42" height="42" role="img" aria-label="Government of India emblem">
+            <circle cx="24" cy="18" r="9" fill="none" stroke="#1c3f94" stroke-width="1.4"/>
+            <g stroke="#1c3f94" stroke-width="1.1">
+              <line x1="24" y1="9" x2="24" y2="27"/>
+              <line x1="15" y1="18" x2="33" y2="18"/>
+              <line x1="17.6" y1="11.6" x2="30.4" y2="24.4"/>
+              <line x1="30.4" y1="11.6" x2="17.6" y2="24.4"/>
+            </g>
+            <text x="24" y="42" text-anchor="middle" font-size="6" fill="#1c3f94">MCA</text>
+          </svg>
+        </div>
+        <div class="mca-brand__text">
+          <strong>MINISTRY OF<br />CORPORATE AFFAIRS</strong>
+          <span>GOVERNMENT OF INDIA</span>
+        </div>
+      </div>
+      <nav class="mca-topnav">
+        <a href="#">Sitemap</a>
+        <span class="sep">|</span>
+        <a href="#main">Skip to Main Content</a>
+        <a class="mca-btn-account" href="#">Create an account with us now</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="mca-breadcrumb">
+    <div class="mca-breadcrumb__inner">
+      MCA Services &rsaquo; Company e-Filing &rsaquo; DIR Forms &rsaquo;
+      <strong>DIR-12 (Appointment of Directors and KMP)</strong>
+    </div>
+  </div>
+
+  <!-- ===================== Form card ===================== -->
+  <main id="main" class="form-shell">
+    <form id="dir12Form" novalidate>
+
+      <!-- Form title header -->
+      <section class="form-head">
+        <div class="form-head__emblem" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="54" height="54">
+            <circle cx="24" cy="18" r="9" fill="none" stroke="#555" stroke-width="1.4"/>
+            <g stroke="#555" stroke-width="1.1">
+              <line x1="24" y1="9" x2="24" y2="27"/><line x1="15" y1="18" x2="33" y2="18"/>
+              <line x1="17.6" y1="11.6" x2="30.4" y2="24.4"/><line x1="30.4" y1="11.6" x2="17.6" y2="24.4"/>
+            </g>
+          </svg>
+        </div>
+        <div class="form-head__title">
+          <h1>FORM NO. DIR-12</h1>
+          <p class="subtitle">Particulars of appointment of directors and the key managerial
+            personnel and the changes among them</p>
+          <p class="pursuant">[Pursuant to Section 7(1)(c), 168 &amp; 170(2) of the Companies Act, 2013 and
+            rule 17 of the Companies (Incorporation) Rules, 2014 and rules 8, 15 &amp; 18 of the
+            Companies (Appointment and Qualification of Directors) Rules, 2014]</p>
+        </div>
+        <div class="form-head__meta">
+          <label class="lang">Form language
+            <span class="radio-inline">
+              <label><input type="radio" name="formLang" value="en" checked /> English</label>
+              <label><input type="radio" name="formLang" value="hi" /> Hindi</label>
+            </span>
+          </label>
+          <p class="note">All fields marked with <span class="req">*</span> are mandatory.</p>
+        </div>
+      </section>
+
+      <!-- Progress / segment nav -->
+      <nav class="segment-nav" aria-label="Form segments">
+        <button type="button" class="seg-link is-active" data-seg="seg1">1. Company details</button>
+        <button type="button" class="seg-link" data-seg="seg2">2. Numbers</button>
+        <button type="button" class="seg-link" data-seg="seg3">3. Particulars</button>
+        <button type="button" class="seg-link" data-seg="seg4">4. Attachments</button>
+        <button type="button" class="seg-link" data-seg="seg5">5. Verification</button>
+      </nav>
+
+      <!-- =============== Segment 1: Company details =============== -->
+      <fieldset class="segment" id="seg1">
+        <legend class="segment__bar"><span>I.</span> Company details</legend>
+
+        <div class="grid">
+          <div class="field field--with-btn col-6">
+            <label for="cin">1. (a) <span class="req">*</span>Corporate Identity Number (CIN) of company</label>
+            <div class="input-row">
+              <input type="text" id="cin" name="cin" maxlength="21" placeholder="L74899DL2010PLC000000"
+                     autocomplete="off" />
+              <button type="button" class="btn btn--prefill" id="prefillBtn">Pre-fill</button>
+            </div>
+            <small class="hint">21-character alphanumeric CIN. Click Pre-fill to auto-populate company data.</small>
+          </div>
+
+          <div class="field col-6">
+            <label for="gln">(b) Global Location Number (GLN) of company</label>
+            <input type="text" id="gln" name="gln" placeholder="Optional" autocomplete="off" />
+          </div>
+
+          <div class="field col-6">
+            <label for="companyName">2. (a) Name of the company</label>
+            <input type="text" id="companyName" name="companyName" readonly class="readonly" />
+          </div>
+
+          <div class="field col-6">
+            <label for="companyEmail">(c) <span class="req">*</span>e-mail ID of the company</label>
+            <input type="email" id="companyEmail" name="companyEmail" placeholder="name@company.com" />
+          </div>
+
+          <div class="field col-12">
+            <label for="regdOffice">(b) Address of the registered office of the company</label>
+            <textarea id="regdOffice" name="regdOffice" rows="2" readonly class="readonly"></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- =============== Segment 2: Numbers =============== -->
+      <fieldset class="segment" id="seg2">
+        <legend class="segment__bar"><span>3.</span> Number of directors / KMP / others for whom the form is filed</legend>
+
+        <div class="grid">
+          <div class="field col-4">
+            <label for="numAppointment">Number of appointment(s)</label>
+            <input type="number" id="numAppointment" name="numAppointment" min="0" max="15" value="0" />
+          </div>
+          <div class="field col-4">
+            <label for="numCessation">Number of cessation(s)</label>
+            <input type="number" id="numCessation" name="numCessation" min="0" max="15" value="0" />
+          </div>
+          <div class="field col-4">
+            <label for="numChange">Number of change(s) in designation</label>
+            <input type="number" id="numChange" name="numChange" min="0" max="15" value="0" />
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>4. Reason / purpose of filing the form</strong>
+          <div class="checkbox-grid">
+            <label><input type="checkbox" name="purpose" value="appointment" checked /> Appointment</label>
+            <label><input type="checkbox" name="purpose" value="cessation" /> Cessation</label>
+            <label><input type="checkbox" name="purpose" value="change" /> Change in designation</label>
+            <label><input type="checkbox" name="purpose" value="regularisation" /> Regularisation of additional director</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- =============== Segment 3: Particulars =============== -->
+      <fieldset class="segment" id="seg3">
+        <legend class="segment__bar"><span>II.</span> Particulars of appointment / cessation / change</legend>
+
+        <!-- Appointment particulars -->
+        <div class="subsection">
+          <div class="subsection__head">
+            <h3>A. Particulars of appointment of director(s) / KMP</h3>
+            <button type="button" class="btn btn--add" data-add="appointment">+ Add appointment</button>
+          </div>
+          <div id="appointmentList" class="entry-list"></div>
+        </div>
+
+        <!-- Cessation particulars -->
+        <div class="subsection">
+          <div class="subsection__head">
+            <h3>B. Particulars of cessation of director(s) / KMP</h3>
+            <button type="button" class="btn btn--add" data-add="cessation">+ Add cessation</button>
+          </div>
+          <div id="cessationList" class="entry-list"></div>
+        </div>
+
+        <!-- Change in designation -->
+        <div class="subsection">
+          <div class="subsection__head">
+            <h3>C. Particulars of change in designation</h3>
+            <button type="button" class="btn btn--add" data-add="change">+ Add change</button>
+          </div>
+          <div id="changeList" class="entry-list"></div>
+        </div>
+      </fieldset>
+
+      <!-- =============== Segment 4: Attachments =============== -->
+      <fieldset class="segment" id="seg4">
+        <legend class="segment__bar"><span>5.</span> Attachments</legend>
+        <ul class="attach-list">
+          <li>
+            <label>Letter of appointment / declaration in Form DIR-2 (consent to act as director)</label>
+            <input type="file" name="attachDir2" accept=".pdf" />
+          </li>
+          <li>
+            <label>Interest in other entities of the director</label>
+            <input type="file" name="attachInterest" accept=".pdf" />
+          </li>
+          <li>
+            <label>Declaration by first director in Form INC-9 (if applicable)</label>
+            <input type="file" name="attachInc9" accept=".pdf" />
+          </li>
+          <li>
+            <label>Copy of resolution of appointment / cessation</label>
+            <input type="file" name="attachResolution" accept=".pdf" />
+          </li>
+          <li>
+            <label>Optional attachment(s)</label>
+            <input type="file" name="attachOptional" accept=".pdf" multiple />
+          </li>
+        </ul>
+      </fieldset>
+
+      <!-- =============== Segment 5: Verification =============== -->
+      <fieldset class="segment" id="seg5">
+        <legend class="segment__bar"><span>6.</span> Declaration &amp; Verification</legend>
+
+        <div class="declaration">
+          <p>I am authorised by the Board of Directors of the company vide resolution number
+            <input type="text" class="inline-input" id="resNo" name="resNo" placeholder="Resolution no." />
+            dated
+            <input type="date" class="inline-input" id="resDate" name="resDate" />
+            to sign this form and declare that all the requirements of the Companies Act, 2013 and the rules
+            made thereunder in respect of the subject matter of this form have been complied with. I also
+            declare that all the information given herein above is true, correct and complete and nothing has
+            been concealed.</p>
+
+          <div class="grid">
+            <div class="field col-4">
+              <label>To be digitally signed by</label>
+              <div class="radio-stack">
+                <label><input type="radio" name="signerType" value="director" checked /> Director</label>
+                <label><input type="radio" name="signerType" value="manager" /> Manager</label>
+                <label><input type="radio" name="signerType" value="ceo" /> CEO / CFO</label>
+                <label><input type="radio" name="signerType" value="secretary" /> Company Secretary</label>
+              </div>
+            </div>
+            <div class="field col-4">
+              <label for="signerId"><span class="req">*</span>DIN / PAN of the signatory</label>
+              <input type="text" id="signerId" name="signerId" placeholder="DIN (8 digits) or PAN" />
+            </div>
+            <div class="field col-4">
+              <label for="signerName"><span class="req">*</span>Name of the signatory</label>
+              <input type="text" id="signerName" name="signerName" />
+            </div>
+          </div>
+        </div>
+
+        <div class="certification">
+          <h3>Certificate by practising professional</h3>
+          <p>It is hereby certified that I have verified the above particulars from the records of the company
+            and found them true and correct.</p>
+          <div class="grid">
+            <div class="field col-4">
+              <label>Category of professional</label>
+              <div class="radio-inline">
+                <label><input type="radio" name="proType" value="ca" checked /> CA</label>
+                <label><input type="radio" name="proType" value="cs" /> CS</label>
+                <label><input type="radio" name="proType" value="cwa" /> CWA</label>
+              </div>
+            </div>
+            <div class="field col-4">
+              <label>Whether associate or fellow</label>
+              <div class="radio-inline">
+                <label><input type="radio" name="proMember" value="associate" checked /> Associate</label>
+                <label><input type="radio" name="proMember" value="fellow" /> Fellow</label>
+              </div>
+            </div>
+            <div class="field col-4">
+              <label for="proMembership">Membership number</label>
+              <input type="text" id="proMembership" name="proMembership" />
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <button type="button" class="btn btn--ghost" id="checkBtn">Check Form</button>
+        <button type="button" class="btn btn--ghost" id="saveBtn">Save Draft</button>
+        <button type="reset" class="btn btn--ghost" id="resetBtn">Reset</button>
+        <button type="submit" class="btn btn--primary" id="submitBtn">Submit</button>
+      </div>
+
+      <div id="formMessage" class="form-message" role="status" aria-live="polite"></div>
+    </form>
+
+    <!-- JSON preview of submitted data -->
+    <details id="jsonPreview" class="json-preview" hidden>
+      <summary>Submitted form data (JSON)</summary>
+      <pre id="jsonOutput"></pre>
+    </details>
+  </main>
+
+  <footer class="mca-footer">
+    <p>This is a demonstration replica of MCA Form DIR-12 built with HTML, CSS and JavaScript.
+       It is not connected to the official MCA portal.</p>
+  </footer>
+
+  <!-- Templates for repeatable entries -->
+  <template id="tpl-appointment">
+    <div class="entry" data-type="appointment">
+      <div class="entry__head">
+        <span class="entry__title">Appointment #<span class="entry__idx"></span></span>
+        <button type="button" class="btn btn--remove" data-remove>&times; Remove</button>
+      </div>
+      <div class="grid">
+        <div class="field col-4">
+          <label><span class="req">*</span>Category</label>
+          <select name="ap_category">
+            <option value="">-- Select --</option>
+            <option>Director</option>
+            <option>Managing Director</option>
+            <option>Whole-time Director</option>
+            <option>Additional Director</option>
+            <option>Alternate Director</option>
+            <option>Nominee Director</option>
+            <option>Manager</option>
+            <option>Chief Executive Officer (CEO)</option>
+            <option>Chief Financial Officer (CFO)</option>
+            <option>Company Secretary</option>
+          </select>
+        </div>
+        <div class="field col-4 field--with-btn">
+          <label><span class="req">*</span>DIN / PAN / Membership no.</label>
+          <div class="input-row">
+            <input type="text" name="ap_din" placeholder="DIN or PAN" />
+            <button type="button" class="btn btn--prefill" data-verify>Verify</button>
+          </div>
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Name</label>
+          <input type="text" name="ap_name" />
+        </div>
+        <div class="field col-4">
+          <label>Designation</label>
+          <input type="text" name="ap_designation" />
+        </div>
+        <div class="field col-4">
+          <label>Category of director</label>
+          <select name="ap_dircategory">
+            <option value="">-- Select --</option>
+            <option>Promoter</option>
+            <option>Professional</option>
+            <option>Independent</option>
+            <option>Nominee</option>
+            <option>Government</option>
+            <option>Small shareholders</option>
+          </select>
+        </div>
+        <div class="field col-4">
+          <label>Whether Chairman</label>
+          <div class="radio-inline">
+            <label><input type="radio" name="ap_chairman__IDX" value="yes" /> Yes</label>
+            <label><input type="radio" name="ap_chairman__IDX" value="no" checked /> No</label>
+          </div>
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Date of appointment</label>
+          <input type="date" name="ap_date" />
+        </div>
+        <div class="field col-4">
+          <label>Date of Board resolution / AGM</label>
+          <input type="date" name="ap_boardDate" />
+        </div>
+        <div class="field col-4">
+          <label>Date of birth</label>
+          <input type="date" name="ap_dob" />
+        </div>
+        <div class="field col-4">
+          <label>Nationality</label>
+          <input type="text" name="ap_nationality" value="Indian" />
+        </div>
+        <div class="field col-4">
+          <label>Whether resident of India</label>
+          <div class="radio-inline">
+            <label><input type="radio" name="ap_resident__IDX" value="yes" checked /> Yes</label>
+            <label><input type="radio" name="ap_resident__IDX" value="no" /> No</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-cessation">
+    <div class="entry" data-type="cessation">
+      <div class="entry__head">
+        <span class="entry__title">Cessation #<span class="entry__idx"></span></span>
+        <button type="button" class="btn btn--remove" data-remove>&times; Remove</button>
+      </div>
+      <div class="grid">
+        <div class="field col-4 field--with-btn">
+          <label><span class="req">*</span>DIN / PAN</label>
+          <div class="input-row">
+            <input type="text" name="ce_din" placeholder="DIN or PAN" />
+            <button type="button" class="btn btn--prefill" data-verify>Verify</button>
+          </div>
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Name</label>
+          <input type="text" name="ce_name" />
+        </div>
+        <div class="field col-4">
+          <label>Designation</label>
+          <input type="text" name="ce_designation" />
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Date of cessation</label>
+          <input type="date" name="ce_date" />
+        </div>
+        <div class="field col-8">
+          <label><span class="req">*</span>Reason for cessation</label>
+          <select name="ce_reason">
+            <option value="">-- Select --</option>
+            <option>Resignation</option>
+            <option>Removal</option>
+            <option>Disqualification</option>
+            <option>Death</option>
+            <option>Absented from Board meetings</option>
+            <option>Vacation of office under section 167</option>
+            <option>Change in nomination</option>
+            <option>Withdrawal of nomination</option>
+            <option>Others</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-change">
+    <div class="entry" data-type="change">
+      <div class="entry__head">
+        <span class="entry__title">Change #<span class="entry__idx"></span></span>
+        <button type="button" class="btn btn--remove" data-remove>&times; Remove</button>
+      </div>
+      <div class="grid">
+        <div class="field col-4 field--with-btn">
+          <label><span class="req">*</span>DIN / PAN</label>
+          <div class="input-row">
+            <input type="text" name="ch_din" placeholder="DIN or PAN" />
+            <button type="button" class="btn btn--prefill" data-verify>Verify</button>
+          </div>
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Name</label>
+          <input type="text" name="ch_name" />
+        </div>
+        <div class="field col-4">
+          <label>Old designation</label>
+          <input type="text" name="ch_oldDesignation" />
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>New designation</label>
+          <input type="text" name="ch_newDesignation" />
+        </div>
+        <div class="field col-4">
+          <label><span class="req">*</span>Date of change</label>
+          <input type="date" name="ch_date" />
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>

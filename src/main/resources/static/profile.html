@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - MCA Services</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .profile-container {
+            padding: 30px;
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .profile-header {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark-blue);
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .saved-forms-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .saved-forms-table th, .saved-forms-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .saved-forms-table th {
+            background-color: #f5f8fa;
+            color: #333;
+            font-weight: 600;
+        }
+        .saved-forms-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-badge {
+            background-color: #ffc107;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Utility Bar -->
+    <div class="utility-bar">
+        <div>
+            <span>Sitemap</span> | <span>Skip to Main Content</span>
+        </div>
+        <div>
+            <span>Font Size</span>
+            <div class="btn-circle">+</div>
+            <span>A</span>
+            <div class="btn-circle">-</div>
+        </div>
+        <div>
+            <span>Light Mode</span>
+            <div class="btn-circle light">☼</div>
+            <div class="btn-circle light">☾</div>
+        </div>
+        <div>
+            <select style="padding:2px 5px; border-radius:3px; border:1px solid #ccc;">
+                <option>English</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Logo Area -->
+    <div class="logo-area">
+        <div class="logos">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Satyamev Jayate">
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <h2 style="color:var(--dark-blue); font-weight:700; font-size:24px; line-height:1.2;">MINISTRY OF<br>CORPORATE<br>AFFAIRS</h2>
+                <div style="color:#00a3e0; font-size:12px; font-weight:600; margin-top:2px;">GOVERNMENT OF INDIA</div>
+            </div>
+        </div>
+        <div class="tagline">
+            <h2>EMPOWERING BUSINESS, PROTECTING INVESTORS</h2>
+            <p>REGULATOR • <span style="color:#009688;">INTEGRATOR</span> • <span style="color:var(--orange);">FACILITATOR</span> • <span style="color:#00a3e0;">EDUCATOR</span></p>
+        </div>
+    </div>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar">
+        <a href="index.html">Home</a>
+        <div class="nav-user-dropdown" style="position: relative; display: inline-block;">
+            <div class="nav-user" id="login" style="cursor: pointer;">Hello User ▾</div>
+            <div class="dropdown-content" style="display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 4px; overflow: hidden; font-size: 14px;">
+                <a href="profile.html" style="color: #333; padding: 10px 16px; text-decoration: none; display: block; text-align: left; border-bottom: 1px solid #eee;">My Profile</a>
+                <a href="#" style="color: #333; padding: 10px 16px; text-decoration: none; display: block; text-align: left;">Logout</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hamburger">☰</div>
+
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs">
+        HOME &gt; <strong>My Profile</strong>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <div class="profile-container">
+            <div class="profile-header">My Profile</div>
+            
+            <div style="font-size: 16px; margin-bottom: 30px;">
+                <strong>Welcome, <span id="profileName">User</span>!</strong><br>
+                Here you can view the list of forms you have saved.
+            </div>
+
+            <div style="font-size: 18px; font-weight: 600; color: #333;">Saved Forms</div>
+            
+            <table class="saved-forms-table" id="formsTable">
+                <thead>
+                    <tr>
+                        <th>Form Name</th>
+                        <th>CIN</th>
+                        <th>Company Name</th>
+                        <th>Date Saved</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="formsTableBody">
+                    <!-- Forms will be injected here via JS -->
+                </tbody>
+            </table>
+            
+            <div id="noFormsMsg" style="display: none; padding: 20px; text-align: center; color: #666; background: #f9f9f9; border: 1px solid #ddd; border-top: none;">
+                No saved forms found.
+            </div>
+        </div>
+
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Dropdown logic
+            const loginElement = document.getElementById("login");
+            const storedName = localStorage.getItem("userName");
+            if (loginElement) {
+                if (storedName && storedName.trim() !== "") {
+                    loginElement.innerHTML = `Hello ${storedName} &#9662;`;
+                    document.getElementById("profileName").innerText = storedName;
+                } else {
+                    loginElement.innerHTML = `Hello User &#9662;`;
+                }
+
+                loginElement.addEventListener("click", function(e) {
+                    const dropdown = this.nextElementSibling;
+                    if (dropdown) {
+                        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+                    }
+                    e.stopPropagation();
+                });
+                
+                document.addEventListener("click", function(e) {
+                    const dropdown = loginElement.nextElementSibling;
+                    if (dropdown) {
+                        dropdown.style.display = "none";
+                    }
+                });
+            }
+
+            // Load saved forms
+            const savedForms = JSON.parse(localStorage.getItem("savedForms")) || [];
+            const tbody = document.getElementById("formsTableBody");
+            const noFormsMsg = document.getElementById("noFormsMsg");
+
+            if (savedForms.length === 0) {
+                noFormsMsg.style.display = "block";
+            } else {
+                savedForms.forEach((form, index) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><strong>${form.formName || 'DIR-12'}</strong></td>
+                        <td>${form.cin || 'N/A'}</td>
+                        <td>${form.companyName || 'N/A'}</td>
+                        <td>${form.date || 'N/A'}</td>
+                        <td><span class="status-badge">${form.status || 'Draft'}</span></td>
+                        <td><a href="index.html" style="color: #0073b6; text-decoration: none; font-weight: 500;">Edit</a></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

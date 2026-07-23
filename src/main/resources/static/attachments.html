@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form No. DIR-12 - Attachments & Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Utility Bar -->
+    <div class="utility-bar">
+        <div>
+            <span>Sitemap</span> | <span>Skip to Main Content</span>
+        </div>
+        <div>
+            <span>Font Size</span>
+            <div class="btn-circle">+</div>
+            <span>A</span>
+            <div class="btn-circle">-</div>
+        </div>
+        <div>
+            <span>Light Mode</span>
+            <div class="btn-circle light">☼</div>
+            <div class="btn-circle light">☾</div>
+        </div>
+        <div>
+            <select style="padding:2px 5px; border-radius:3px; border:1px solid #ccc;">
+                <option>हिन्दी</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Logo Area -->
+    <div class="logo-area">
+        <div class="logos">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Satyamev Jayate">
+            <div style="display:flex; flex-direction:column; justify-content:center;">
+                <h2 style="color:var(--dark-blue); font-weight:700; font-size:24px; line-height:1.2;">MINISTRY OF<br>CORPORATE<br>AFFAIRS</h2>
+                <div style="color:#00a3e0; font-size:12px; font-weight:600; margin-top:2px;">GOVERNMENT OF INDIA</div>
+            </div>
+        </div>
+        <div class="tagline">
+            <h2>EMPOWERING BUSINESS, PROTECTING INVESTORS</h2>
+            <p>REGULATOR • <span style="color:#009688;">INTEGRATOR</span> • <span style="color:var(--orange);">FACILITATOR</span> • <span style="color:#00a3e0;">EDUCATOR</span></p>
+        </div>
+    </div>
+
+    <!-- Nav Bar -->
+    <div class="nav-bar">
+        <a href="#">Create an account with us now</a>
+        <div class="nav-user-dropdown" style="position: relative; display: inline-block;">
+            <div class="nav-user" id="login" style="cursor: pointer;">Hello User ▾</div>
+            <div class="dropdown-content" style="display: none; position: absolute; right: 0; background-color: #f9f9f9; min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 4px; overflow: hidden; font-size: 14px;">
+                <a href="profile.html" style="color: #333; padding: 10px 16px; text-decoration: none; display: block; text-align: left; border-bottom: 1px solid #eee;">My Profile</a>
+                <a href="#" style="color: #333; padding: 10px 16px; text-decoration: none; display: block; text-align: left;">Logout</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hamburger">☰</div>
+
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs">
+        HOME &gt; MCA Services &gt; Company e-Filing &gt; DIN Related Forms &gt; <strong>DIR-12 - Appointment of Directors and KMP</strong>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        
+        <!-- Form Header -->
+        <div class="form-header-box">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Emblem">
+            <div class="form-header-text">
+                <h1>Form No. DIR-12</h1>
+                <p>Particulars of appointment of directors and the key managerial personnel<br>and the changes among them</p>
+                <p>[Pursuant to sections 7(1) (c), 168 & 170 (2) of The Companies Act, 2013 and<br>rule 17 of the Companies (Incorporation) Rules 2014 and 8, 15 & 18 of the<br>Companies (Appointment and Qualification of Directors) Rules, 2014]</p>
+            </div>
+            <div class="form-language">
+                <div>Form language</div>
+                <label class="radio-inline"><input type="radio" name="lang" id="langEn" checked> English</label>
+                <label class="radio-inline"><input type="radio" name="lang" id="langHi"> Hindi</label>
+                <div class="instruction" style="margin-top: 15px; color:var(--light-blue); font-size:13px; font-style:italic;">Refer instruction kit for filing the form</div>
+            </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="stepper">
+            <div class="step">
+                <div class="step-icon">✓</div>
+                <div class="step-label" style="color: var(--light-blue);">Company Details</div>
+            </div>
+            <div class="step">
+                <div class="step-icon-current" style="width: 20px; height: 20px; border-radius: 50%; background: var(--light-blue); margin-bottom: 10px;"></div>
+                <div class="step-label" style="color: #ccc;">Attachment & Verification</div>
+            </div>
+            <div class="step">
+                <div class="step-icon-empty"></div>
+                <div class="step-label" style="color: #333;">Review & Submit</div>
+            </div>
+        </div>
+
+        <!-- Form Body -->
+        <div class="form-body">
+            
+            <div class="section-title">Attachments & Declaration</div>
+            
+            <div style="font-weight: 700; margin-bottom: 20px; font-size: 15px; color: #333;">7 Attachments</div>
+
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label style="font-size:14px; margin-bottom:10px;">(d) Optional attachments &ndash; if any</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="text" id="attachmentFileName" class="form-control" placeholder="Max 2 MB" style="width: 250px;" disabled>
+                    <input type="file" id="attachmentFileInput" style="display:none;" accept=".pdf,.png,.jpg,.jpeg">
+                    <button type="button" onclick="document.getElementById('attachmentFileInput').click()" class="btn-primary" style="background-color: #0073b6; color: white; border: none; padding: 10px 20px; border-radius: 2px; font-weight: 500; font-size: 14px; cursor: pointer;">Choose File</button>
+                </div>
+            </div>
+
+            <!-- Director's Consent and Declaration Block -->
+            <div style="background:#e8eff6; padding:25px; border-radius:4px; margin-bottom:20px;">
+                <div style="font-weight: 700; margin-bottom: 25px; font-size: 15px; color: #333;">Director's Consent and Declaration</div>
+                
+                <div style="font-size: 14px; line-height: 2.2; color: #333; margin-bottom: 30px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                    <span>I,</span>
+                    <input type="text" class="form-control disabled" id="declarationName" disabled style="width: 250px; background-color: #e3e0dd; text-align: center; color: #555; padding: 8px;">
+                    <span>hereby give my consent to act as a director of</span>
+                    <input type="text" class="form-control disabled" id="declarationCompanyName" disabled style="width: 320px; background-color: #e3e0dd; text-align: center; color: #555; padding: 8px;">
+                    <span>(name of the</span>
+                    <div style="width: 100%;">company), pursuant to sub-section (5) of section 152 of the Companies Act, 2013 and Certify that I am not disqualified to become a director under the</div>
+                    <div style="width: 100%;">Companies Act, 2013.</div>
+                </div>
+
+                <div style="font-size: 14px; line-height: 1.8; color: #333; display: flex; align-items: flex-start; gap: 10px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        <strong>I declare that I</strong> have not been convicted of any offence in connection with the promotion, formation or management of any company or LLP and<br><br>
+                        have not been found guilty of any fraud or misfeasance or of any breach of duty to any company under this Act or any previous company law in the<br><br>
+                        last five years.
+                    </label>
+                </div>
+            </div>
+                
+                <div style="font-size: 14px; line-height: 1.8; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        <strong>I further declare</strong> that if appointed, my total Directorship in all the companies shall not exceed the prescribed number of companies in which a<br><br>person can be appointed as a Director.
+                    </label>
+                </div>
+                
+                <div style="font-size: 14px; line-height: 1.8; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        <strong>I further declare</strong> that I have not incurred disqualification under the Companies Act, 2013 in any of the above companies and that I, at present, stand<br><br>free from any disqualification from being a director.
+                    </label>
+                </div>
+
+                <div style="font-size: 14px; line-height: 1.8; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label style="width: 100%;">
+                        <strong>I also declare</strong> that:
+                        
+                        <div style="margin-top: 15px; margin-left: 5px; display: flex; flex-direction: column; gap: 15px;">
+                            <label style="display: flex; align-items: flex-start; gap: 10px;">
+                                <input type="radio" name="clearance" style="margin-top: 5px; transform: scale(1.2);">
+                                <span><strong>I am not</strong> required to obtain the security clearance from the Ministry of Home Affairs, Government of India under sub-rule (1) of rule 10 before<br><br>applying for director identification number; or</span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 10px;">
+                                <input type="radio" name="clearance" style="margin-top: 5px; transform: scale(1.2);">
+                                <span><strong>I am</strong> required to obtain the security clearance from the Ministry of Home Affairs, Government of India under sub-rule (1) of rule 10 before applying<br><br>for director identification number and the same has been obtained and is attached,</span>
+                            </label>
+                        </div>
+                    </label>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-weight: 700; font-size: 14px; color: #333;">To be digitally signed by Director / Managing Director</div>
+                    <input type="text" id="dscBox" class="form-control disabled" disabled style="width: 250px; background-color: #e3e0dd; color: #555; text-align: center;">
+                </div>
+            </div>
+
+            <div style="background:#e8eff6; padding:25px; border-radius:4px; margin-bottom:20px;">
+                <div style="font-weight: 700; margin-bottom: 25px; font-size: 15px; color: #333;">Declaration</div>
+                
+                <div style="font-size: 14px; line-height: 2.2; color: #333; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <span style="font-weight: 600;">I*</span>
+                    <input type="text" class="form-control" id="declaringPerson" placeholder="Enter Here" style="width: 150px; background-color: #fff;">
+                    <span>authorized by the Boards of Directors of the Company/ by the court or NCLT vide / by members vide*</span>
+                    <input type="text" class="form-control" id="authorizationVide" placeholder="Enter Here" style="width: 100px; background-color: #fff;">
+                </div>
+                
+                <div style="font-size: 14px; line-height: 2.2; color: #333; display: flex; align-items: center; gap: 10px; margin-bottom: 30px; margin-left: 215px;">
+                    <span>number dated *</span>
+                    <div style="position:relative;">
+                        <input type="text" class="form-control" placeholder="DD/MM/YYYY" style="width: 140px; background-color: #fff; padding-right: 35px;">
+                        <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:16px; color:#888;">📅</span>
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; line-height: 1.8; color: #333; margin-bottom: 30px;">
+                    to sign this form and declare that all the requirements of Companies Act, 2013 and the rules made thereunder in respect of subject matter of this<br><br>form and matters incidental thereto have been compiled with. <strong>I also declare</strong> that all the information given herein above is true, correct, and<br><br>complete including the attachments to this form and nothing material has been suppressed.
+                </div>
+
+                <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-weight: 700; font-size: 14px; color: #333;">*To be digitally signed by</div>
+                    <input type="text" class="form-control disabled" disabled style="width: 250px; background-color: #e3e0dd; color: #888;">
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 14px; color: #333;">*Designation</div>
+                    <select class="form-control" style="width: 300px; background-color: #fff;">
+                        <option>Select Category</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; align-items: flex-start; justify-content: space-between;">
+                    <div style="font-size: 14px; color: #333; width: 65%;">*Director identification number of the director; or DIN or PAN of the manager or CEO or CFO or<br>liquidator/IRP/RP or Promoter Shareholder; or Membership number of the secretary</div>
+                    <input type="text" class="form-control" placeholder="Enter Here" style="width: 300px; background-color: #fff;">
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 40px;">Certificate</div>
+
+            <div style="background:#e8eff6; padding:25px; border-radius:4px; margin-bottom:30px;">
+                <div style="font-weight: 700; margin-bottom: 25px; font-size: 15px; color: #333;">Certificate by practicing professional</div>
+                
+                <div style="font-size: 14px; line-height: 1.8; color: #333; margin-bottom: 25px;">
+                    I declare that I have been duly engaged for the purpose of certification of this form. It is hereby certified that I have gone through the provisions of<br>the Companies Act, 2013 and Rules thereunder for the subject matter of this form and matters incidental thereto and I have verified the above<br>particulars [including attachment(s)] from the original/certified records maintained by the Company/applicant which is subject matter of this form<br>and found them to be true, correct and complete and no information material to this form has been suppressed.
+                </div>
+
+                <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 20px;">
+                    I further certify that:
+                </div>
+
+                <div style="font-size: 14px; line-height: 2; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        The said records have been properly prepared, signed by the required officers of the Company and maintained as per the relevant provisions of<br>the Companies Act, 2013 and were found to be in order;
+                    </label>
+                </div>
+
+                <div style="font-size: 14px; line-height: 2; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        All the required attachments have been completely and legibly attached to this form;
+                    </label>
+                </div>
+
+                <div style="font-size: 14px; line-height: 2; color: #333; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 30px;">
+                    <input type="checkbox" style="margin-top: 5px; transform: scale(1.2);">
+                    <label>
+                        It is understood that I shall be liable for action under Section 448 of The Companies Act, 2013 for wrong certification, if any, found at any<br>stage.
+                    </label>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;">
+                    <div style="font-weight: 700; font-size: 14px; color: #333;">To be digitally signed by</div>
+                    <input type="text" class="form-control disabled" disabled style="width: 300px; background-color: #e3e0dd; color: #888;">
+                </div>
+
+                <div style="font-size: 14px; color: #333; margin-bottom: 15px;">Category</div>
+                
+                <div style="font-size: 14px; color: #333; display: flex; flex-direction: column; gap: 15px; margin-left: 5px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="category" style="transform: scale(1.2);">
+                        <span>Chartered Accountant in whole time practice</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="category" style="transform: scale(1.2);">
+                        <span>Company Secretary in whole time practice</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="category" style="transform: scale(1.2);">
+                        <span>Cost Accountant in whole time practice</span>
+                    </label>
+                </div>
+
+                <div style="font-size: 14px; color: #333; margin-top: 25px; margin-bottom: 15px;">Whether associate or fellow:</div>
+                <div style="display: flex; gap: 40px; margin-left: 5px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="assoc_fellow" style="transform: scale(1.2);">
+                        <span style="font-size: 14px; color: #333;">Associate</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="radio" name="assoc_fellow" style="transform: scale(1.2);">
+                        <span style="font-size: 14px; color: #333;">Fellow</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="font-size: 14px; line-height: 1.8; color: #333; margin-top: 30px; margin-bottom: 30px;">
+                This eForm has been taken on file maintained by the Registrar of Companies through electronic mode and on the basis of statement of correctness given<br>by the company
+            </div>
+
+            <div class="form-actions" style="display: flex; justify-content: space-between; margin-top:30px;">
+                <button type="button" class="btn-outline" style="background-color: #8eb7da; color: white; border: 1px solid #2374b3; padding: 10px 30px; border-radius: 2px; font-weight: 600; font-size: 14px; margin-top:0;" onclick="window.location.href='index.html'">Previous</button>
+                <div>
+                    <button type="button" id="saveFormBtn" class="btn-outline" style="background-color: #8eb7da; color: white; border: 1px solid #2374b3; padding: 10px 30px; border-radius: 2px; font-weight: 600; font-size: 14px; margin-top:0; margin-right: 15px;">Save</button>
+                    <button type="button" class="btn-primary" style="background-color: #0073b6; color: white; border: 1px solid #0073b6; padding: 10px 30px; border-radius: 2px; font-weight: 600; font-size: 14px; margin-top:0;">Next</button>
+                </div>
+            </div>
+            
+
+
+        </div>
+    </div>
+    
+</body>
+</html>

@@ -84,6 +84,7 @@ public class OtpController {
         }
         return ResponseUtil.build(HttpStatus.OK, "Otp Verified", finalCookie);
     }
+
     @PostMapping({ "/confirmOtp" })
     public ResponseEntity<ApiResponse> verifyOtp(@RequestBody VerifyOtpDTO verifyOtpDTO) throws IOException {
         populateFromSession(verifyOtpDTO);
@@ -112,7 +113,7 @@ public class OtpController {
         if (!opened) {
             log.warn("CDP cookie injection failed. Returning cookies to frontend as fallback.");
         }
-        
+
         return ResponseUtil.build(HttpStatus.OK, opened ? "Login successful! MCA portal opened."
                 : "Login successful! Please use start-chrome.bat for auto-login.", finalCookie);
     }
