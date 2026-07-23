@@ -31,3 +31,7 @@ ocr:
  # tessdataPath: ${OCR_TESSDATA_PATH:C:\tesseract-5.4.0.20240606\tesseract-5.4.0.20240606\tessdata}
   language: ${OCR_LANGUAGE:eng}
   nativeLibraryPath: ${OCR_NATIVE_LIBRARY_PATH:}
+
+chrome:
+  binary:
+    path: ${CHROME_BINARY_PATH:C:\Program Files (x86)\Google\Chrome\Application\chrome.exe}
