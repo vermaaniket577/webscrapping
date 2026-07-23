@@ -171,9 +171,10 @@ public class ChromeBrowserService {
                         "about:blank"
                 );
             } else {
-                // Linux/AWS launch command
+                // Linux/AWS launch command (MUST be headless if there's no display)
                 pb = new ProcessBuilder(
                         chromePath,
+                        "--headless=new",
                         "--remote-debugging-port=" + CDP_PORT,
                         "--user-data-dir=" + userDataDir,
                         "--no-first-run",
