@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +44,8 @@ public class ChromeBrowserService {
             String val = cookieMap.get(required);
             if (val == null || val.isBlank()) {
                 log.error("Missing required cookie '{}'. Cannot open MCA. Available cookies: {}", required, cookieMap.keySet());
+                // Fallback: open in default browser anyway
+                openInDefaultBrowser();
                 return false;
             }
         }
@@ -65,19 +68,45 @@ public class ChromeBrowserService {
 
         // ── Step 3: If no CDP found, launch Chrome with debugging ──
         if (wsUrl == null) {
-            log.info("No existing CDP endpoint on port {}. Launching Chrome with debugging enabled...", CDP_PORT);
+            log.info("No existing CDP endpoint on port {}. Launching browser with debugging enabled...", CDP_PORT);
             wsUrl = launchChromeWithDebugging();
         }
 
         if (wsUrl == null) {
-            log.error("Failed to obtain a CDP WebSocket URL. Cannot inject cookies.");
-            return false;
+            log.warn("Failed to obtain a CDP WebSocket URL. Falling back to default browser.");
+            openInDefaultBrowser();
+            return true;
         }
 
         log.info("✓ CDP WebSocket connected: {}", wsUrl);
 
         // ── Step 4 & 5: Inject cookies + localStorage, then navigate ──
-        return injectAndNavigate(wsUrl, cookieMap, deviceId);
+        boolean result = injectAndNavigate(wsUrl, cookieMap, deviceId);
+        if (!result) {
+            log.warn("CDP injection failed. Falling back to default browser.");
+            openInDefaultBrowser();
+            return true;
+        }
+        return result;
+    }
+
+    /**
+     * Opens MCA home page in the system's default browser.
+     * Works with any browser: Chrome, Edge, Firefox, Brave, etc.
+     */
+    private void openInDefaultBrowser() {
+        try {
+            if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.awt.Desktop.getDesktop().browse(new URI(MCA_HOME_URL));
+                log.info("✓ MCA Home Page opened in default browser: {}", MCA_HOME_URL);
+            } else {
+                // Fallback for headless or unsupported Desktop environments
+                Runtime.getRuntime().exec(new String[]{"cmd", "/c", "start", MCA_HOME_URL});
+                log.info("✓ MCA Home Page opened via cmd start: {}", MCA_HOME_URL);
+            }
+        } catch (Exception e) {
+            log.error("Failed to open MCA Home Page in default browser: {}", e.getMessage());
+        }
     }
 
     private Map<String, String> parseCookies(String cookieStr) {
@@ -153,17 +182,24 @@ public class ChromeBrowserService {
             if (f.exists()) return chromeBinaryPath;
         }
 
+        // Try Chrome, Edge, and Brave — any Chromium-based browser supports CDP
         String[] candidates = {
                 System.getenv("ProgramFiles") + "\\Google\\Chrome\\Application\\chrome.exe",
                 System.getenv("ProgramFiles(x86)") + "\\Google\\Chrome\\Application\\chrome.exe",
-                System.getProperty("user.home") + "\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe"
+                System.getProperty("user.home") + "\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe",
+                System.getenv("ProgramFiles") + "\\Microsoft\\Edge\\Application\\msedge.exe",
+                System.getenv("ProgramFiles(x86)") + "\\Microsoft\\Edge\\Application\\msedge.exe",
+                System.getProperty("user.home") + "\\AppData\\Local\\Microsoft\\Edge\\Application\\msedge.exe",
+                System.getenv("ProgramFiles") + "\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+                System.getProperty("user.home") + "\\AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
         };
         for (String path : candidates) {
             if (path != null && new File(path).exists()) {
-                log.info("Resolved Chrome binary at: {}", path);
+                log.info("Resolved browser binary at: {}", path);
                 return path;
             }
         }
+        log.warn("No Chromium-based browser found. Will fall back to system default browser.");
         return null;
     }
 
