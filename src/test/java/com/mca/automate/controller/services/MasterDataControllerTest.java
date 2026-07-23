@@ -15,10 +15,13 @@ import com.mca.automate.service.McaCaptchaService;
 import com.mca.automate.service.McaLoginService;
 import com.mca.automate.service.McaSearchService;
 import com.mca.automate.util.Util;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 class MasterDataControllerTest {
 
@@ -57,9 +60,10 @@ class MasterDataControllerTest {
                 eq("cin")))
                 .thenReturn("{\"companyData\":{\"CIN\":\"L74909DL2008PLC180850\"}}");
 
-        String response = controller.fetchMasterData(request, "verified-cookie\n");
+        ResponseEntity<?> response = controller.fetchMasterData(request, "verified-cookie\n");
 
-        assertThat(response).isEqualTo("{\"companyData\":{\"CIN\":\"L74909DL2008PLC180850\"}}");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("{\"companyData\":{\"CIN\":\"L74909DL2008PLC180850\"}}");
         verify(loginService, never()).login(any(), any(), any(), any());
         verify(loginService, never()).logout(any());
     }
@@ -70,9 +74,12 @@ class MasterDataControllerTest {
         when(loginService.login("user@example.com", "secret", "device-1", "login"))
                 .thenReturn(new LoginResponse("otp-cookie", "Otp Required", true));
 
-        String response = controller.fetchMasterData(request, null);
+        ResponseEntity<?> response = controller.fetchMasterData(request, null);
 
-        assertThat(response).isEqualTo("otp-cookie");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body).containsEntry("cookie", "otp-cookie");
         verify(captchaService, never()).captchaValidatonWrapper(any());
         verify(searchService, never()).search(any(), any(), any());
     }
@@ -93,9 +100,10 @@ class MasterDataControllerTest {
                 eq("cin")))
                 .thenReturn("master-data-response");
 
-        String response = controller.fetchMasterData(request, "");
+        ResponseEntity<?> response = controller.fetchMasterData(request, "");
 
-        assertThat(response).isEqualTo("master-data-response");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("master-data-response");
         verify(loginService).logout("captcha-cookie");
     }
 
@@ -107,9 +115,10 @@ class MasterDataControllerTest {
         when(searchService.search(eq(request), eq(new LoginResponse("name-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\",\"cmpnyNm\":\"TEST COMPANY\"}]}}");
 
-        String response = controller.fetchMasterDataWithName(request, "name-cookie\n");
+        ResponseEntity<?> response = controller.fetchMasterDataWithName(request, "name-cookie\n");
 
-        assertThat(response).isEqualTo("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\",\"cmpnyNm\":\"TEST COMPANY\"}]}}");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("{\"data\":{\"result\":[{\"cnNmbr\":\"L74909DL2008PLC180850\",\"cmpnyNm\":\"TEST COMPANY\"}]}}");
         verify(loginService, never()).login(any(), any(), any(), any());
         verify(loginService, never()).logout(any());
     }
@@ -120,9 +129,12 @@ class MasterDataControllerTest {
         when(loginService.login("user@example.com", "secret", "device-1", "login"))
                 .thenReturn(new LoginResponse("name-otp-cookie", "Otp Required", true));
 
-        String response = controller.fetchMasterDataWithName(request, null);
+        ResponseEntity<?> response = controller.fetchMasterDataWithName(request, null);
 
-        assertThat(response).isEqualTo("name-otp-cookie");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body).containsEntry("cookie", "name-otp-cookie");
         verify(captchaService, never()).captchaValidatonWrapper(any());
         verify(searchService, never()).search(any(), any(), any());
     }
@@ -137,9 +149,10 @@ class MasterDataControllerTest {
         when(searchService.search(eq(request), eq(new LoginResponse("name-captcha-cookie", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("name-search-response");
 
-        String response = controller.fetchMasterDataWithName(request, "");
+        ResponseEntity<?> response = controller.fetchMasterDataWithName(request, "");
 
-        assertThat(response).isEqualTo("name-search-response");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("name-search-response");
         verify(loginService).logout("name-captcha-cookie");
     }
 
@@ -151,9 +164,10 @@ class MasterDataControllerTest {
         when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("check-cookie-updated", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
 
-        String response = controller.checkCompayName(request, "check-cookie\n");
+        ResponseEntity<?> response = controller.checkCompayName(request, "check-cookie\n");
 
-        assertThat(response).isEqualTo("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("{\"data\":{\"result\":[{\"name\":\"TEST PRIVATE LIMITED\"}]}}");
         verify(loginService, never()).login(any(), any(), any(), any());
         verify(loginService, never()).logout(any());
     }
@@ -164,9 +178,12 @@ class MasterDataControllerTest {
         when(loginService.login("user@example.com", "secret", "device-1", "login"))
                 .thenReturn(new LoginResponse("check-otp-cookie", "Otp Required", true));
 
-        String response = controller.checkCompayName(request, null);
+        ResponseEntity<?> response = controller.checkCompayName(request, null);
 
-        assertThat(response).isEqualTo("check-otp-cookie");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body).containsEntry("cookie", "check-otp-cookie");
         verify(captchaService, never()).captchaValidatonWrapper(any());
         verify(searchService, never()).checkCompanyName(any(), any(), any());
     }
@@ -181,9 +198,10 @@ class MasterDataControllerTest {
         when(searchService.checkCompanyName(eq(request), eq(new LoginResponse("check-captcha-cookie", "Authenticated Cookie", true)), eq(captcha)))
                 .thenReturn("check-company-response");
 
-        String response = controller.checkCompayName(request, "");
+        ResponseEntity<?> response = controller.checkCompayName(request, "");
 
-        assertThat(response).isEqualTo("check-company-response");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("check-company-response");
         verify(loginService).logout("check-captcha-cookie");
     }
 
@@ -197,9 +215,10 @@ class MasterDataControllerTest {
                 eq("din")))
                 .thenReturn("director-response");
 
-        String response = controller.fetchDirData(request, "director-cookie\n");
+        ResponseEntity<?> response = controller.fetchDirData(request, "director-cookie\n");
 
-        assertThat(response).isEqualTo("director-response");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("director-response");
         verify(loginService, never()).login(any(), any(), any(), any());
         verify(loginService, never()).logout(any());
     }
@@ -210,9 +229,12 @@ class MasterDataControllerTest {
         when(loginService.login("user@example.com", "secret", "device-1", "login"))
                 .thenReturn(new LoginResponse("director-otp-cookie", "Otp Required", true));
 
-        String response = controller.fetchDirData(request, null);
+        ResponseEntity<?> response = controller.fetchDirData(request, null);
 
-        assertThat(response).isEqualTo("director-otp-cookie");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertThat(body).containsEntry("cookie", "director-otp-cookie");
         verify(searchService, never()).searchMasterData(any(), any(), any(), any());
     }
 
@@ -228,9 +250,10 @@ class MasterDataControllerTest {
                 eq("din")))
                 .thenReturn("director-login-response");
 
-        String response = controller.fetchDirData(request, "");
+        ResponseEntity<?> response = controller.fetchDirData(request, "");
 
-        assertThat(response).isEqualTo("director-login-response");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("director-login-response");
         verify(loginService).logout("director-login-cookie");
     }
 
