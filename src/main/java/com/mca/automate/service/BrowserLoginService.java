@@ -235,95 +235,93 @@ public class BrowserLoginService {
             }
             log.info("✓ Second Continue button clicked");
 
-            // ── Step 10: Check for login errors before waiting for dashboard ──
-            // Wait a moment for the API response to come back
-            Thread.sleep(3000);
-
-            // Handle "Dual Login Detected" modal popup if present
-            try {
-                String pageSource = driver.getPageSource();
-                if (pageSource != null && (pageSource.toLowerCase().contains("dual login") || pageSource.toLowerCase().contains("login here"))) {
-                    log.info("Dual Login Detected dialog is present. Attempting to click 'Login Here'...");
-                    
-                    String[] xpaths = {
-                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
-                        "//a[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
-                        "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here') and (self::button or self::a or @role='button' or contains(@class, 'btn') or contains(@class, 'button'))]",
-                        "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]"
-                    };
-                    
-                    boolean clicked = false;
-                    for (String xpath : xpaths) {
-                        List<WebElement> elements = driver.findElements(By.xpath(xpath));
-                        for (WebElement el : elements) {
-                            if (el.isDisplayed() && el.isEnabled()) {
-                                log.info("Found 'Login Here' element: <{}> with class '{}'", el.getTagName(), el.getAttribute("class"));
-                                scrollToElement(driver, el);
-                                try {
-                                    el.click();
-                                } catch (Exception clickEx) {
-                                    log.info("Standard click on 'Login Here' failed, trying Actions click...");
-                                    try {
-                                        new org.openqa.selenium.interactions.Actions(driver).moveToElement(el).click().perform();
-                                    } catch (Exception actEx) {
-                                        log.info("Actions click failed, trying JS click...");
-                                        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
-                                    }
-                                }
-                                clicked = true;
-                                log.info("✓ 'Login Here' clicked");
-                                break;
-                            }
-                        }
-                        if (clicked) break;
-                    }
-                    
-                    if (clicked) {
-                        // Wait a bit for the redirection or modal dismissal
-                        Thread.sleep(3000);
-                    } else {
-                        log.warn("Dual Login Detected dialog was found, but could not click the 'Login Here' button!");
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Failed during Dual Login dialog handling: {}", e.getMessage());
-            }
-
-            // Check for error toast messages (the portal uses ngx-toastr or similar), ignoring dual login messages
-            String errorMessage = detectLoginError(driver, true);
-            if (errorMessage != null) {
-                log.error("Login error detected: {}", errorMessage);
-                return new BrowserLoginResponse("", "Login failed - " + errorMessage, false);
-            }
-
-            // Check if the form was reset (password field cleared = server rejected credentials)
-            try {
-                WebElement pwdField = driver.findElement(getBy(passwordInputSelector));
-                String pwdValue = pwdField.getAttribute("value");
-                boolean pwdEmpty = (pwdValue == null || pwdValue.isEmpty());
-                String pwdClasses = pwdField.getAttribute("class");
-                boolean isPristine = (pwdClasses != null && pwdClasses.contains("ng-pristine"));
-                
-                if (pwdEmpty && isPristine && driver.getCurrentUrl().contains(passwordPageUrlContains)) {
-                    log.error("Form was reset after submission - credentials rejected by server. " +
-                              "Password field is empty and pristine. Current URL: {}", driver.getCurrentUrl());
-                    return new BrowserLoginResponse("", 
-                        "Login failed - credentials rejected. The portal reset the form (invalid password or account issue). " +
-                        "Please verify your PAN and password are correct.", false);
-                }
-            } catch (org.openqa.selenium.NoSuchElementException ignored) {
-                // Password field not found - page may have navigated away (good sign)
-                log.debug("Password field not found - page may have navigated successfully");
-            }
-
-            // ── Step 11: Wait for Dashboard ──
-            log.info("Waiting for dashboard (URL contains: '{}'). Current URL: {}", 
+            // ── Step 10: Wait for Dashboard or handle Dual Login prompt dynamically ──
+            log.info("Waiting for dashboard or dual login prompt (URL contains: '{}'). Current URL: {}", 
                      dashboardUrlContains, driver.getCurrentUrl());
-            
-            // Use a longer wait for dashboard since the login API + redirect takes time
-            WebDriverWait dashboardWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutSeconds));
-            dashboardWait.until(ExpectedConditions.urlContains(dashboardUrlContains));
-            log.info("✓ Dashboard loaded. Current URL: {}", driver.getCurrentUrl());
+
+            long startTime = System.currentTimeMillis();
+            long maxWaitMillis = timeoutSeconds * 1000L;
+            boolean handledDualLogin = false;
+            boolean reachedDashboard = false;
+
+            while (System.currentTimeMillis() - startTime < maxWaitMillis) {
+                String currentUrl = driver.getCurrentUrl();
+                if (currentUrl != null && currentUrl.contains(dashboardUrlContains)) {
+                    log.info("✓ Dashboard loaded. Current URL: {}", currentUrl);
+                    reachedDashboard = true;
+                    break;
+                }
+
+                // Check and handle "Dual Login Detected" popup
+                if (!handledDualLogin) {
+                    try {
+                        String[] xpaths = {
+                            "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
+                            "//a[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
+                            "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
+                            "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]"
+                        };
+                        for (String xpath : xpaths) {
+                            List<WebElement> elements = driver.findElements(By.xpath(xpath));
+                            for (WebElement el : elements) {
+                                if (el.isDisplayed() && el.isEnabled()) {
+                                    log.info("Dual Login Detected dialog present! Clicking 'Login Here' element: <{}>", el.getTagName());
+                                    scrollToElement(driver, el);
+                                    try {
+                                        el.click();
+                                    } catch (Exception clickEx) {
+                                        try {
+                                            new org.openqa.selenium.interactions.Actions(driver).moveToElement(el).click().perform();
+                                        } catch (Exception actEx) {
+                                            ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
+                                        }
+                                    }
+                                    handledDualLogin = true;
+                                    log.info("✓ 'Login Here' clicked. Waiting for session override...");
+                                    Thread.sleep(2000);
+                                    break;
+                                }
+                            }
+                            if (handledDualLogin) break;
+                        }
+                    } catch (Exception e) {
+                        log.debug("Dual login check error: {}", e.getMessage());
+                    }
+                }
+
+                // Check for real login error (ignoring dual login error messages while handling)
+                String errorMessage = detectLoginError(driver, true);
+                if (errorMessage != null && !handledDualLogin) {
+                    log.error("Login error detected: {}", errorMessage);
+                    return new BrowserLoginResponse("", "Login failed - " + errorMessage, false);
+                }
+
+                // Check if form was reset
+                try {
+                    WebElement pwdField = driver.findElement(getBy(passwordInputSelector));
+                    String pwdValue = pwdField.getAttribute("value");
+                    boolean pwdEmpty = (pwdValue == null || pwdValue.isEmpty());
+                    String pwdClasses = pwdField.getAttribute("class");
+                    boolean isPristine = (pwdClasses != null && pwdClasses.contains("ng-pristine"));
+                    
+                    if (pwdEmpty && isPristine && driver.getCurrentUrl().contains(passwordPageUrlContains) && !handledDualLogin) {
+                        log.error("Form was reset after submission - credentials rejected by server.");
+                        return new BrowserLoginResponse("", 
+                            "Login failed - credentials rejected. The portal reset the form.", false);
+                    }
+                } catch (org.openqa.selenium.NoSuchElementException ignored) {}
+
+                Thread.sleep(500);
+            }
+
+            if (!reachedDashboard) {
+                // If loop finished without reaching dashboard, check if there's any final error message
+                String finalError = detectLoginError(driver, false);
+                if (finalError != null) {
+                    return new BrowserLoginResponse("", "Login failed - " + finalError, false);
+                }
+                return new BrowserLoginResponse("", "Login timed out waiting for dashboard. Current URL: " + driver.getCurrentUrl(), false);
+            }
 
             // ── Step 12: Save Cookies ──
             String cookies = extractCookies(driver);
