@@ -134,12 +134,12 @@ public class BrowserLoginService {
             log.info("✓ Password page loaded. Current URL: {}", driver.getCurrentUrl());
 
             // ── Step 6: Verify URL ──
-            String currentUrl = driver.getCurrentUrl();
-            if (!currentUrl.contains(passwordPageUrlContains)) {
-                log.error("URL verification failed. Expected URL containing '{}', got: {}", passwordPageUrlContains, currentUrl);
+            String verifiedPasswordUrl = driver.getCurrentUrl();
+            if (!verifiedPasswordUrl.contains(passwordPageUrlContains)) {
+                log.error("URL verification failed. Expected URL containing '{}', got: {}", passwordPageUrlContains, verifiedPasswordUrl);
                 return new BrowserLoginResponse("", "URL verification failed - not on password page", false);
             }
-            log.info("✓ URL verified: {}", currentUrl);
+            log.info("✓ URL verified: {}", verifiedPasswordUrl);
 
             // Wait for password page to fully render
             Thread.sleep(1500);
