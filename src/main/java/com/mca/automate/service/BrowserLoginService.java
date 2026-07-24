@@ -239,8 +239,58 @@ public class BrowserLoginService {
             // Wait a moment for the API response to come back
             Thread.sleep(3000);
 
-            // Check for error toast messages (the portal uses ngx-toastr or similar)
-            String errorMessage = detectLoginError(driver);
+            // Handle "Dual Login Detected" modal popup if present
+            try {
+                String pageSource = driver.getPageSource();
+                if (pageSource != null && (pageSource.contains("Dual Login Detected") || pageSource.contains("Login Here"))) {
+                    log.info("Dual Login Detected dialog is present. Attempting to click 'Login Here'...");
+                    
+                    String[] xpaths = {
+                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
+                        "//a[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]",
+                        "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here') and (self::button or self::a or @role='button' or contains(@class, 'btn') or contains(@class, 'button'))]",
+                        "//*[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'login here')]"
+                    };
+                    
+                    boolean clicked = false;
+                    for (String xpath : xpaths) {
+                        List<WebElement> elements = driver.findElements(By.xpath(xpath));
+                        for (WebElement el : elements) {
+                            if (el.isDisplayed() && el.isEnabled()) {
+                                log.info("Found 'Login Here' element: <{}> with class '{}'", el.getTagName(), el.getAttribute("class"));
+                                scrollToElement(driver, el);
+                                try {
+                                    el.click();
+                                } catch (Exception clickEx) {
+                                    log.info("Standard click on 'Login Here' failed, trying Actions click...");
+                                    try {
+                                        new org.openqa.selenium.interactions.Actions(driver).moveToElement(el).click().perform();
+                                    } catch (Exception actEx) {
+                                        log.info("Actions click failed, trying JS click...");
+                                        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
+                                    }
+                                }
+                                clicked = true;
+                                log.info("✓ 'Login Here' clicked");
+                                break;
+                            }
+                        }
+                        if (clicked) break;
+                    }
+                    
+                    if (clicked) {
+                        // Wait a bit for the redirection or modal dismissal
+                        Thread.sleep(3000);
+                    } else {
+                        log.warn("Dual Login Detected dialog was found, but could not click the 'Login Here' button!");
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed during Dual Login dialog handling: {}", e.getMessage());
+            }
+
+            // Check for error toast messages (the portal uses ngx-toastr or similar), ignoring dual login messages
+            String errorMessage = detectLoginError(driver, true);
             if (errorMessage != null) {
                 log.error("Login error detected: {}", errorMessage);
                 return new BrowserLoginResponse("", "Login failed - " + errorMessage, false);
@@ -325,6 +375,10 @@ public class BrowserLoginService {
      * Returns the error message if found, null otherwise.
      */
     private String detectLoginError(WebDriver driver) {
+        return detectLoginError(driver, false);
+    }
+
+    private String detectLoginError(WebDriver driver, boolean ignoreDualLogin) {
         try {
             // 1. Check for toast/snackbar notifications (common Angular pattern)
             String[] toastSelectors = {
@@ -339,6 +393,9 @@ public class BrowserLoginService {
                     if (toast.isDisplayed()) {
                         String text = toast.getText().trim();
                         if (!text.isEmpty()) {
+                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                                continue;
+                            }
                             return text;
                         }
                     }
@@ -357,6 +414,9 @@ public class BrowserLoginService {
                     if (error.isDisplayed()) {
                         String text = error.getText().trim();
                         if (!text.isEmpty()) {
+                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                                continue;
+                            }
                             return text;
                         }
                     }
@@ -379,6 +439,9 @@ public class BrowserLoginService {
                     if (isVisible) {
                         String text = modal.getText().trim();
                         if (!text.isEmpty()) {
+                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                                continue;
+                            }
                             return "Portal message: " + text;
                         }
                     }
@@ -397,6 +460,9 @@ public class BrowserLoginService {
                 "        text.includes('wrong password') || text.includes('account locked') || " +
                 "        text.includes('too many attempts') || text.includes('login failed') || " +
                 "        text.includes('authentication failed')) {" +
+                "      if (ignoreDualLogin && (text.includes('dual login') || text.includes('login here'))) {" +
+                "        continue;" +
+                "      }" +
                 "      return node.textContent.trim();" +
                 "    }" +
                 "  }" +
