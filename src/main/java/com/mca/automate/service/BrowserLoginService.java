@@ -242,7 +242,7 @@ public class BrowserLoginService {
             // Handle "Dual Login Detected" modal popup if present
             try {
                 String pageSource = driver.getPageSource();
-                if (pageSource != null && (pageSource.contains("Dual Login Detected") || pageSource.contains("Login Here"))) {
+                if (pageSource != null && (pageSource.toLowerCase().contains("dual login") || pageSource.toLowerCase().contains("login here"))) {
                     log.info("Dual Login Detected dialog is present. Attempting to click 'Login Here'...");
                     
                     String[] xpaths = {
@@ -393,7 +393,7 @@ public class BrowserLoginService {
                     if (toast.isDisplayed()) {
                         String text = toast.getText().trim();
                         if (!text.isEmpty()) {
-                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                            if (ignoreDualLogin && (text.toLowerCase().contains("dual login") || text.toLowerCase().contains("login here"))) {
                                 continue;
                             }
                             return text;
@@ -414,7 +414,7 @@ public class BrowserLoginService {
                     if (error.isDisplayed()) {
                         String text = error.getText().trim();
                         if (!text.isEmpty()) {
-                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                            if (ignoreDualLogin && (text.toLowerCase().contains("dual login") || text.toLowerCase().contains("login here"))) {
                                 continue;
                             }
                             return text;
@@ -439,7 +439,7 @@ public class BrowserLoginService {
                     if (isVisible) {
                         String text = modal.getText().trim();
                         if (!text.isEmpty()) {
-                            if (ignoreDualLogin && (text.contains("Dual Login Detected") || text.contains("Login Here"))) {
+                            if (ignoreDualLogin && (text.toLowerCase().contains("dual login") || text.toLowerCase().contains("login here"))) {
                                 continue;
                             }
                             return "Portal message: " + text;
